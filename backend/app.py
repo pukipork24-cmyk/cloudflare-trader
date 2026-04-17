@@ -25,17 +25,29 @@ def create_app(config_name='production'):
     CORS(app, resources={r"/api/*": {"origins": "*"}})
 
     with app.app_context():
-        # Create tables
-        init_db(app)
+        try:
+            # Create tables
+            init_db(app)
+            logger.info("✓ Database initialized")
+        except Exception as e:
+            logger.warning(f"⚠️ Database init failed (will retry): {e}")
 
-        # Register blueprints
-        from api.routes import api_bp
-        app.register_blueprint(api_bp, url_prefix='/api')
+        try:
+            # Register blueprints
+            from api.routes import api_bp
+            app.register_blueprint(api_bp, url_prefix='/api')
+            logger.info("✓ API routes registered")
+        except Exception as e:
+            logger.error(f"✗ API routes failed: {e}")
 
-        # Initialize scheduler
-        if config_name != 'testing':
-            from orchestrator.scheduler import init_scheduler
-            init_scheduler(app)
+        try:
+            # Initialize scheduler
+            if config_name != 'testing':
+                from orchestrator.scheduler import init_scheduler
+                init_scheduler(app)
+                logger.info("✓ Scheduler initialized")
+        except Exception as e:
+            logger.warning(f"⚠️ Scheduler init failed: {e}")
 
         logger.info(f"✓ App initialized ({config_name} mode)")
 
