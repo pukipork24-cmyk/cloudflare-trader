@@ -557,6 +557,12 @@ body::before{
 
   <!-- ── RIGHT: AI Signal ── -->
   <div class="col" style="overflow-y:auto">
+    <!-- Panel Tabs -->
+    <div style="display:flex;border-bottom:1px solid var(--bdr);background:var(--surf);gap:0">
+      <button style="flex:1;padding:.5rem;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border-bottom:2px solid transparent;transition:all .2s;border-bottom-color:var(--cyan)" onclick="document.getElementById('signalPanel').style.display='flex';document.getElementById('evolutionPanel').style.display='none';this.style.borderBottomColor='var(--cyan)';this.nextElementSibling.style.borderBottomColor='transparent'">📊 Signals</button>
+      <button style="flex:1;padding:.5rem;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border-bottom:2px solid transparent;transition:all .2s" onclick="document.getElementById('evolutionPanel').style.display='flex';document.getElementById('signalPanel').style.display='none';this.style.borderBottomColor='var(--cyan)';this.previousElementSibling.style.borderBottomColor='transparent';fetchEvolutionStatus()">🧬 Evolution</button>
+    </div>
+
     <div class="panel">
       <div class="ph"><div class="ph-title">AI Signal</div><div class="ph-badge" id="ai-ts">--:--</div></div>
 
@@ -604,8 +610,41 @@ body::before{
       </div>
     </div>
 
+    <!-- Evolution Control (TAB HIDDEN BY DEFAULT) -->
+    <div class="panel" id="evolutionPanel" style="flex:1;overflow-y:auto;display:none;flex-direction:column">
+      <div class="ph"><div class="ph-title">Evolution Control</div></div>
+
+      <!-- Evolution Status Card -->
+      <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid #0f3460;border-radius:10px;padding:1rem;margin-bottom:.75rem">
+        <div style="font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">Latest Evolution</div>
+        <div style="font-size:.9rem;font-weight:700;color:var(--cyan);margin-bottom:.35rem" id="evo-timestamp">Never</div>
+        <div style="font-size:.7rem;color:var(--muted)">Status: <span id="evo-status" style="color:var(--yellow)">Idle</span></div>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:.25rem">Total Cycles: <span id="evo-count" style="color:#fff;font-weight:600">0</span></div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1rem">
+        <button class="abtn abtn-buy" onclick="approveEvolution()" style="font-size:.75rem">✓ Approve</button>
+        <button class="abtn abtn-sell" onclick="declineEvolution()" style="font-size:.75rem">✕ Decline</button>
+      </div>
+
+      <!-- Optimized Parameters -->
+      <div style="background:var(--card2);border:1px solid var(--bdr);border-radius:8px;padding:.75rem;margin-bottom:1rem;font-size:.7rem">
+        <div style="color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem;font-weight:700">Current Parameters</div>
+        <div id="evo-params" style="font-family:monospace;color:var(--cyan);line-height:1.6;max-height:150px;overflow-y:auto">
+          <div style="color:var(--muted)">Loading...</div>
+        </div>
+      </div>
+
+      <!-- Evolution History -->
+      <div style="color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem;font-size:.65rem;font-weight:700">Recent Cycles</div>
+      <div id="evo-history" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:.3rem">
+        <div style="color:var(--muted);font-size:.7rem;text-align:center;padding:.5rem">No history yet</div>
+      </div>
+    </div>
+
     <!-- Signal Log -->
-    <div class="panel" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+    <div class="panel" id="signalPanel" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
       <div class="ph"><div class="ph-title">Signal History</div></div>
       <div class="log-wrap" id="logWrap">
         <div style="color:var(--muted);font-size:.7rem;text-align:center;padding:.5rem">Awaiting signals…</div>
@@ -1101,6 +1140,112 @@ document.querySelectorAll('.tb-pair').forEach(el=>{
 function refresh(){S.cd=15;fetchAI();}
 
 /* ══════════════════════════════════════════════
+   EVOLUTION CONTROL
+══════════════════════════════════════════════ */
+async function fetchEvolutionStatus(){
+  try{
+    const r=await fetch(`${RAILWAY_BASE}/api/evolution/status`);
+    const data=await r.json();
+    if(data.success && data.status){
+      updateEvolutionUI(data.status);
+    }
+  }catch(e){
+    console.error('Failed to fetch evolution status:',e);
+  }
+}
+
+function updateEvolutionUI(status){
+  // Timestamp
+  const tsEl=document.getElementById('evo-timestamp');
+  if(status.last_evolution){
+    const d=new Date(status.last_evolution);
+    tsEl.textContent=d.toLocaleString('en-US',{hour12:false});
+  }else{
+    tsEl.textContent='Never';
+  }
+
+  // Count
+  document.getElementById('evo-count').textContent=status.evolution_count||0;
+
+  // Status indicator
+  const statusEl=document.getElementById('evo-status');
+  statusEl.textContent='Ready';
+  statusEl.style.color='var(--green)';
+
+  // Parameters
+  const paramsEl=document.getElementById('evo-params');
+  if(status.current_params && typeof status.current_params==='object'){
+    const lines=Object.entries(status.current_params).map(([k,v])=>{
+      const val=typeof v==='number'?v.toFixed(1):v;
+      return `<div>${k}: <span style="color:var(--gold2)">${val}</span></div>`;
+    });
+    paramsEl.innerHTML=lines.join('');
+  }
+}
+
+async function approveEvolution(){
+  try{
+    const btn=event.target;
+    btn.disabled=true;
+    btn.textContent='⏳ Executing...';
+
+    const r=await fetch(`${RAILWAY_BASE}/api/evolution/optimize`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({approve:true})
+    });
+    const data=await r.json();
+
+    if(data.success){
+      btn.textContent='✓ Evolution Running';
+      btn.style.opacity='0.7';
+      setTimeout(async ()=>{
+        fetchEvolutionStatus();
+        btn.disabled=false;
+        btn.textContent='✓ Approve';
+        btn.style.opacity='1';
+      },2000);
+    }else{
+      btn.textContent='✗ Failed: '+data.error;
+      setTimeout(()=>{
+        btn.disabled=false;
+        btn.textContent='✓ Approve';
+      },2000);
+    }
+  }catch(e){
+    console.error('Approval failed:',e);
+    event.target.textContent='✗ Error';
+    setTimeout(()=>{event.target.textContent='✓ Approve'},2000);
+  }
+}
+
+function declineEvolution(){
+  const msg='Evolution cycle declined and will not execute.';
+  alert(msg);
+  console.log('Evolution declined by user');
+}
+
+// Fetch evolution status every 30 seconds
+setInterval(fetchEvolutionStatus,30000);
+
+/* ══════════════════════════════════════════════
+   PANEL TAB SWITCHER
+══════════════════════════════════════════════ */
+function toggleEvolutionPanel(){
+  const evoPanel=document.getElementById('evolutionPanel');
+  const sigPanel=document.getElementById('signalPanel');
+  const isEvoVisible=evoPanel.style.display!=='none';
+  if(isEvoVisible){
+    evoPanel.style.display='none';
+    sigPanel.style.display='flex';
+  }else{
+    evoPanel.style.display='flex';
+    sigPanel.style.display='none';
+  }
+  fetchEvolutionStatus(); // Refresh data when panel opens
+}
+
+/* ══════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════ */
 async function init(){
@@ -1119,6 +1264,7 @@ async function init(){
   resizeChart();
 
   await fetchAI();
+  await fetchEvolutionStatus();
 
   // hide loader
   setTimeout(()=>document.getElementById('loader').classList.add('hide'),400);
