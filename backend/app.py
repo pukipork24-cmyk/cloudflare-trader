@@ -49,6 +49,15 @@ def create_app(config_name='production'):
         except Exception as e:
             logger.warning(f"⚠️ Scheduler init failed: {e}")
 
+        try:
+            # Initialize evolution scheduler
+            if config_name != 'testing':
+                from evolution.scheduler import init_evolution_scheduler
+                init_evolution_scheduler(app)
+                logger.info("✓ Evolution scheduler initialized")
+        except Exception as e:
+            logger.warning(f"⚠️ Evolution scheduler init failed: {e}")
+
         logger.info(f"✓ App initialized ({config_name} mode)")
 
     # Error handlers

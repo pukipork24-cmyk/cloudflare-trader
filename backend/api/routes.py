@@ -313,3 +313,36 @@ def get_balance():
         }, 200
 
     return {'error': result.get('error')}, 500
+
+# ===== EVOLUTION & OPTIMIZATION =====
+
+@api_bp.route('/evolution/status', methods=['GET'])
+def get_evolution_status():
+    """Get evolution scheduler status"""
+    from evolution.scheduler import evolution_scheduler
+
+    return {
+        'success': True,
+        'status': evolution_scheduler.get_status()
+    }, 200
+
+@api_bp.route('/evolution/optimize', methods=['POST'])
+def trigger_evolution():
+    """Manually trigger evolution cycle (admin only)"""
+    from evolution.scheduler import evolution_scheduler
+    import asyncio
+
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        asyncio.run(evolution_scheduler.run_evolution_cycle())
+        loop.close()
+
+        return {
+            'success': True,
+            'message': 'Evolution cycle triggered',
+            'status': evolution_scheduler.get_status()
+        }, 200
+    except Exception as e:
+        logger.error(f"Evolution trigger failed: {e}")
+        return {'error': str(e)}, 500
