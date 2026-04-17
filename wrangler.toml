@@ -1,0 +1,13 @@
+name = "pukitradev2"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+[env.production]
+vars = { DEEPSEEK_API_KEY = "sk-2f9dc0a59ac448ce8a873a5f31e9c958" }
+
+[[kv_namespaces]]
+binding = "SETTINGS"
+id = "7511ed069e32457d9025a12d579528a4"
+
+[triggers]
+crons = ["*/5 * * * *"]

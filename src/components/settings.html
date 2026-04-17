@@ -1,0 +1,576 @@
+<!-- Settings Panel Component -->
+<div class="settings-container">
+  <!-- API Credentials Section -->
+  <div class="settings-section">
+    <h3 class="section-title">🔐 API Credentials</h3>
+
+    <!-- Exchange -->
+    <div class="settings-card">
+      <div class="card-header">
+        <h4>Exchange</h4>
+        <span class="status-indicator" id="bitget-status">●</span>
+      </div>
+      <div class="card-body">
+        <div class="form-group">
+          <label>Bitget API Key</label>
+          <div class="input-group">
+            <input type="password" id="bitget-key" placeholder="••••••••••" class="input-field">
+            <span class="last-verified" id="bitget-verified">Not verified</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Bitget API Secret</label>
+          <input type="password" id="bitget-secret" placeholder="••••••••••" class="input-field">
+        </div>
+        <div class="form-group">
+          <label>Bitget Passphrase</label>
+          <input type="password" id="bitget-passphrase" placeholder="••••••••••" class="input-field">
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="testConnection('bitget')">Test Connection</button>
+          <button class="btn btn-secondary" onclick="clearApiKey('bitget')">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Providers -->
+    <div class="settings-card">
+      <div class="card-header">
+        <h4>AI Providers</h4>
+      </div>
+      <div class="card-body">
+        <div class="form-group">
+          <label>DeepSeek API Key</label>
+          <div class="input-group">
+            <input type="password" id="deepseek-key" placeholder="••••••••••" class="input-field">
+            <span class="last-verified" id="deepseek-verified">Not verified</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Anthropic API Key (Claude)</label>
+          <div class="input-group">
+            <input type="password" id="anthropic-key" placeholder="••••••••••" class="input-field">
+            <span class="last-verified" id="anthropic-verified">Not verified</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- External Services -->
+    <div class="settings-card">
+      <div class="card-header">
+        <h4>External Services</h4>
+      </div>
+      <div class="card-body">
+        <div class="form-group">
+          <label>Telegram Bot Token</label>
+          <input type="password" id="telegram-token" placeholder="••••••••••" class="input-field">
+        </div>
+        <div class="form-group">
+          <label>Whale Alert API Key</label>
+          <input type="password" id="whale-alert-key" placeholder="••••••••••" class="input-field">
+        </div>
+        <div class="form-group">
+          <label>Etherscan API Key</label>
+          <input type="password" id="etherscan-key" placeholder="••••••••••" class="input-field">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Trading Rules Section -->
+  <div class="settings-section">
+    <h3 class="section-title">📊 Trading Rules</h3>
+
+    <div class="settings-card">
+      <div class="card-header">
+        <h4>Active Pairs</h4>
+      </div>
+      <div class="card-body">
+        <div class="form-group">
+          <label>Trading Pairs (comma-separated)</label>
+          <input type="text" id="active-pairs" placeholder="BTC, ETH, SOL, XRP" class="input-field">
+          <small>Default: BTC, ETH, SOL</small>
+        </div>
+        <div class="form-group">
+          <label>Max Concurrent Pairs</label>
+          <input type="number" id="max-pairs" min="1" max="10" value="3" class="input-field">
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-card">
+      <div class="card-header">
+        <h4>Risk Management</h4>
+      </div>
+      <div class="card-body">
+        <div class="form-group">
+          <label>Max Leverage</label>
+          <div class="slider-group">
+            <input type="range" id="max-leverage" min="1" max="125" value="1" class="slider">
+            <span class="value-display" id="leverage-display">1x</span>
+          </div>
+          <small>⚠️ Higher leverage = higher risk of liquidation</small>
+        </div>
+
+        <div class="form-group">
+          <label>Per-Trade Risk %</label>
+          <div class="slider-group">
+            <input type="range" id="per-trade-risk" min="0.1" max="5" step="0.1" value="2" class="slider">
+            <span class="value-display" id="risk-display">2.0%</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Daily Loss Limit (USDT)</label>
+          <input type="number" id="daily-loss-limit" min="0" value="100" class="input-field">
+          <small>Stop trading when daily loss exceeds this</small>
+        </div>
+
+        <div class="form-group">
+          <label>Max Open Positions</label>
+          <input type="number" id="max-positions" min="1" max="20" value="3" class="input-field">
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-card">
+      <div class="card-header">
+        <h4>Blacklist</h4>
+      </div>
+      <div class="card-body">
+        <div class="form-group">
+          <label>Coins to Never Trade</label>
+          <textarea id="blacklist" placeholder="Meme coins to avoid&#10;DOGE&#10;SHIB&#10;PEPE" class="input-field" rows="3"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Automation Section -->
+  <div class="settings-section">
+    <h3 class="section-title">⚙️ Automation</h3>
+
+    <div class="settings-card">
+      <div class="card-body">
+        <div class="toggle-group">
+          <label class="toggle-label">
+            <input type="checkbox" id="trading-enabled" class="toggle-input" checked>
+            <span class="toggle-switch"></span>
+            <span class="toggle-text">Trading Enabled (MASTER SWITCH)</span>
+          </label>
+          <small class="toggle-hint">Disable to pause all trading</small>
+        </div>
+
+        <div class="toggle-group">
+          <label class="toggle-label">
+            <input type="checkbox" id="auto-execute" class="toggle-input" checked>
+            <span class="toggle-switch"></span>
+            <span class="toggle-text">Auto-Execute Trades</span>
+          </label>
+          <small class="toggle-hint">If OFF: Trades require manual approval</small>
+        </div>
+
+        <div class="toggle-group">
+          <label class="toggle-label">
+            <input type="checkbox" id="telegram-alerts" class="toggle-input">
+            <span class="toggle-switch"></span>
+            <span class="toggle-text">Telegram Alerts</span>
+          </label>
+          <small class="toggle-hint">Send trade alerts to Telegram</small>
+        </div>
+
+        <div class="toggle-group">
+          <label class="toggle-label">
+            <input type="checkbox" id="auto-refresh" class="toggle-input" checked>
+            <span class="toggle-switch"></span>
+            <span class="toggle-text">Auto-Refresh Prices</span>
+          </label>
+        </div>
+
+        <div class="toggle-group">
+          <label class="toggle-label">
+            <input type="checkbox" id="debug-logging" class="toggle-input">
+            <span class="toggle-switch"></span>
+            <span class="toggle-text">Debug Logging</span>
+          </label>
+          <small class="toggle-hint">Verbose logs (performance impact)</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Schedule Section -->
+  <div class="settings-section">
+    <h3 class="section-title">🕐 Schedule</h3>
+
+    <div class="settings-card">
+      <div class="card-body">
+        <div class="form-group">
+          <label>Analysis Cycle Interval</label>
+          <div class="radio-group">
+            <label><input type="radio" name="cycle-interval" value="5" checked> 5 minutes</label>
+            <label><input type="radio" name="cycle-interval" value="10"> 10 minutes</label>
+            <label><input type="radio" name="cycle-interval" value="15"> 15 minutes</label>
+            <label><input type="radio" name="cycle-interval" value="30"> 30 minutes</label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Trading Window</label>
+          <div class="time-range">
+            <div>
+              <label>Start Time</label>
+              <input type="time" id="trading-start" value="00:00" class="input-field">
+            </div>
+            <span class="separator">to</span>
+            <div>
+              <label>End Time</label>
+              <input type="time" id="trading-end" value="23:59" class="input-field">
+            </div>
+          </div>
+          <small>No trades outside this window</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Save Button -->
+  <div class="settings-footer">
+    <button class="btn btn-success btn-large" onclick="saveAllSettings()">💾 Save All Settings</button>
+    <button class="btn btn-secondary" onclick="resetSettings()">Reset to Defaults</button>
+    <span class="save-status" id="save-status"></span>
+  </div>
+</div>
+
+<style>
+.settings-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 20px;
+  max-width: 900px;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--gold);
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--gold);
+}
+
+.settings-card {
+  background: rgba(20, 20, 20, 0.8);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(30, 30, 30, 0.9);
+  border-bottom: 1px solid var(--border);
+}
+
+.card-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--txt);
+}
+
+.status-indicator {
+  font-size: 12px;
+  width: 8px;
+  height: 8px;
+  display: inline-block;
+  color: var(--red);
+}
+
+.status-indicator.connected {
+  color: var(--green);
+}
+
+.card-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--txt);
+}
+
+.form-group small {
+  font-size: 11px;
+  color: var(--txt-dim);
+}
+
+.input-field,
+.input-group {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--txt);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.input-group {
+  display: flex;
+  gap: 8px;
+  padding: 0;
+}
+
+.input-group input {
+  flex: 1;
+  border-radius: 4px;
+  padding: 8px 12px;
+}
+
+.last-verified {
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--txt-dim);
+  white-space: nowrap;
+  align-self: center;
+}
+
+.slider-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.slider {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.3);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--gold);
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--gold);
+  cursor: pointer;
+  border: none;
+}
+
+.value-display {
+  min-width: 50px;
+  text-align: right;
+  font-size: 13px;
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.toggle-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--txt);
+}
+
+.toggle-input {
+  width: 0;
+  height: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.toggle-switch {
+  width: 40px;
+  height: 22px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.toggle-switch::after {
+  content: '';
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--txt-dim);
+  transition: transform 0.3s;
+}
+
+.toggle-input:checked + .toggle-switch {
+  background: rgba(0, 200, 0, 0.3);
+}
+
+.toggle-input:checked + .toggle-switch::after {
+  background: var(--green);
+  transform: translateX(18px);
+}
+
+.toggle-hint {
+  margin-left: 52px;
+  font-size: 11px;
+  color: var(--txt-dim);
+}
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--txt);
+  cursor: pointer;
+}
+
+.radio-group input {
+  cursor: pointer;
+}
+
+.time-range {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.time-range > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.time-range label {
+  font-size: 12px;
+  color: var(--txt-dim);
+}
+
+.time-range input {
+  padding: 8px 12px;
+}
+
+.separator {
+  color: var(--txt-dim);
+  padding-bottom: 8px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.btn-primary {
+  background: var(--gold);
+  color: #000;
+}
+
+.btn-primary:hover {
+  background: #e6b800;
+  box-shadow: 0 0 10px rgba(204, 170, 0, 0.4);
+}
+
+.btn-secondary {
+  background: rgba(100, 100, 100, 0.3);
+  color: var(--txt);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: rgba(100, 100, 100, 0.5);
+}
+
+.btn-success {
+  background: var(--green);
+  color: #000;
+}
+
+.btn-success:hover {
+  background: #00cc66;
+  box-shadow: 0 0 10px rgba(0, 200, 100, 0.4);
+}
+
+.btn-large {
+  padding: 12px 24px;
+  font-size: 14px;
+}
+
+.settings-footer {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.save-status {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--green);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.save-status.show {
+  opacity: 1;
+}
+</style>

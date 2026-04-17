@@ -1,0 +1,444 @@
+<!-- Logs Panel Component -->
+<div class="logs-container">
+  <!-- Filters Section (Sticky) -->
+  <div class="logs-filters">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>Level</label>
+        <div class="chip-group">
+          <button class="chip active" data-filter="level" data-value="all">All</button>
+          <button class="chip" data-filter="level" data-value="SUCCESS">✓ Success</button>
+          <button class="chip" data-filter="level" data-value="INFO">ℹ Info</button>
+          <button class="chip" data-filter="level" data-value="WARN">⚠ Warn</button>
+          <button class="chip" data-filter="level" data-value="ERROR">✕ Error</button>
+        </div>
+      </div>
+      <div class="filter-group">
+        <label>Agent</label>
+        <select id="agent-filter" class="filter-select">
+          <option value="">All Agents</option>
+          <option value="technical">Technical</option>
+          <option value="sentiment">Sentiment</option>
+          <option value="fundamental">Fundamental</option>
+          <option value="risk">Risk</option>
+          <option value="portfolio">Portfolio</option>
+          <option value="intelligence">Intelligence</option>
+          <option value="execution">Execution (CIO)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>Event Type</label>
+        <select id="event-filter" class="filter-select">
+          <option value="">All Events</option>
+          <option value="AGENT_CALL">Agent Call</option>
+          <option value="TRADE">Trade Execution</option>
+          <option value="ORDER">Order Update</option>
+          <option value="API_ERROR">API Error</option>
+          <option value="APPROVAL">CIO Approval</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Date Range</label>
+        <select id="date-filter" class="filter-select">
+          <option value="1h">Last 1 hour</option>
+          <option value="24h" selected>Last 24 hours</option>
+          <option value="7d">Last 7 days</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="filter-row">
+      <div class="filter-group full">
+        <label>Search</label>
+        <input type="text" id="log-search" placeholder="Search logs..." class="search-input">
+      </div>
+    </div>
+
+    <div class="filter-actions">
+      <button class="btn btn-secondary" onclick="applyLogFilters()">Apply Filters</button>
+      <button class="btn btn-secondary" onclick="resetLogFilters()">Reset</button>
+    </div>
+  </div>
+
+  <!-- Log Controls -->
+  <div class="log-controls">
+    <div class="control-left">
+      <label class="toggle-label">
+        <input type="checkbox" id="auto-scroll" class="toggle-input" checked>
+        <span class="toggle-switch-small"></span>
+        <span>Auto-scroll</span>
+      </label>
+      <span class="log-stats" id="log-stats">456 logs | 12 errors | Last 24h</span>
+    </div>
+    <div class="control-right">
+      <button class="btn btn-secondary btn-sm" onclick="pauseLogs()">⏸ Pause</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportLogs('json')">⬇ JSON</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportLogs('csv')">⬇ CSV</button>
+      <button class="btn btn-danger btn-sm" onclick="clearLogs()">🗑 Clear</button>
+    </div>
+  </div>
+
+  <!-- Live Log Stream -->
+  <div class="log-stream" id="log-stream">
+    <!-- Logs populated here by JavaScript -->
+    <div class="log-entry loading">
+      <span>Loading logs...</span>
+    </div>
+  </div>
+</div>
+
+<style>
+.logs-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 0;
+}
+
+.logs-filters {
+  background: rgba(20, 20, 20, 0.9);
+  border-bottom: 2px solid var(--border);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.filter-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.filter-row.full {
+  grid-template-columns: 1fr;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-group.full {
+  grid-column: 1 / -1;
+}
+
+.filter-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--txt-dim);
+  text-transform: uppercase;
+}
+
+.chip-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 20px;
+  color: var(--txt);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.chip:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.chip.active {
+  background: var(--gold);
+  color: #000;
+  border-color: var(--gold);
+}
+
+.filter-select {
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--txt);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 8px rgba(204, 170, 0, 0.3);
+}
+
+.search-input {
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--txt);
+  font-size: 13px;
+  width: 100%;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 8px rgba(204, 170, 0, 0.3);
+}
+
+.filter-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.log-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(20, 20, 20, 0.8);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.control-left,
+.control-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--txt);
+}
+
+.toggle-switch-small {
+  width: 30px;
+  height: 16px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.toggle-switch-small::after {
+  content: '';
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--txt-dim);
+  transition: transform 0.3s;
+  margin-left: 2px;
+}
+
+.toggle-input:checked + .toggle-switch-small {
+  background: rgba(0, 200, 0, 0.3);
+}
+
+.toggle-input:checked + .toggle-switch-small::after {
+  background: var(--green);
+  transform: translateX(14px);
+  margin-left: 0;
+}
+
+.log-stats {
+  font-size: 12px;
+  color: var(--txt-dim);
+}
+
+.btn-sm {
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+}
+
+.btn-danger {
+  background: rgba(255, 0, 0, 0.2);
+  color: var(--red);
+  border: 1px solid var(--red);
+}
+
+.btn-danger:hover {
+  background: rgba(255, 0, 0, 0.4);
+}
+
+.log-stream {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0;
+}
+
+.log-entry {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.log-entry:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.log-entry.SUCCESS {
+  border-left: 3px solid var(--green);
+}
+
+.log-entry.INFO {
+  border-left: 3px solid #0099ff;
+}
+
+.log-entry.WARN {
+  border-left: 3px solid var(--yellow);
+}
+
+.log-entry.ERROR {
+  border-left: 3px solid var(--red);
+}
+
+.log-timestamp {
+  font-size: 11px;
+  color: var(--txt-dim);
+  white-space: nowrap;
+  min-width: 100px;
+}
+
+.log-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  min-width: fit-content;
+}
+
+.log-badge.SUCCESS {
+  color: var(--green);
+  background: rgba(0, 200, 100, 0.15);
+}
+
+.log-badge.INFO {
+  color: #0099ff;
+  background: rgba(0, 153, 255, 0.15);
+}
+
+.log-badge.WARN {
+  color: var(--yellow);
+  background: rgba(255, 200, 0, 0.15);
+}
+
+.log-badge.ERROR {
+  color: var(--red);
+  background: rgba(255, 0, 0, 0.15);
+}
+
+.log-content {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.log-message {
+  color: var(--txt);
+  word-break: break-word;
+}
+
+.log-details {
+  font-size: 11px;
+  color: var(--txt-dim);
+  display: none;
+  margin-top: 4px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+  border-left: 2px solid var(--border);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.log-entry.expanded .log-details {
+  display: block;
+}
+
+.log-copy-btn {
+  opacity: 0;
+  transition: opacity 0.2s;
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--txt-dim);
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.log-entry:hover .log-copy-btn {
+  opacity: 1;
+}
+
+.log-copy-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+.log-entry.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  color: var(--txt-dim);
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .filter-row {
+    grid-template-columns: 1fr;
+  }
+
+  .log-entry {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .log-content {
+    grid-column: 1;
+  }
+
+  .log-copy-btn {
+    opacity: 1;
+  }
+}
+</style>

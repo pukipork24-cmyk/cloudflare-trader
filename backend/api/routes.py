@@ -1,0 +1,315 @@
+"""Flask API endpoints"""
+from flask import Blueprint, request, jsonify
+from datetime import datetime, timedelta
+from models.database import db, Trade, TradeDecision, BacktestResult
+from services.bitget_client import bitget_client
+from services.circuit_breaker import circuit_breaker
+from backtest.engine import backtest_engine
+from agents import *
+from .auth import require_auth
+from .errors import *
+import asyncio
+import logging
+
+logger = logging.getLogger(__name__)
+
+api_bp = Blueprint('api', __name__)
+
+# ===== LIVE TRADING =====
+
+@api_bp.route('/analyze', methods=['POST'])
+@require_auth
+async def analyze():
+    """Multi-agent market analysis"""
+    try:
+        data = request.json
+        symbol = data.get('symbol', 'BTC')
+
+        # Check circuit breaker
+        if circuit_breaker.is_paused():
+            return {'error': 'Circuit breaker activated - trading paused'}, 503
+
+        # Run all agents
+        technical = TechnicalAgent()
+        sentiment = SentimentAgent()
+        fundamental = FundamentalAgent()
+        risk = RiskAgent()
+        portfolio = PortfolioAgent()
+        intelligence = IntelligenceAgent()
+
+        # Gather data
+        market_data = {
+            'symbol': symbol,
+            'price': data.get('price'),
+            'rsi': data.get('rsi'),
+            'macd': data.get('macd'),
+            'bb_pos': data.get('bb_pos'),
+            'high': data.get('high'),
+            'low': data.get('low'),
+            'volume': data.get('volume'),
+            'fear_greed': data.get('fear_greed'),
+            'balance': data.get('balance', 10000),
+            'open_positions': data.get('open_positions', 0),
+            'daily_loss': data.get('daily_loss', 0)
+        }
+
+        # Run agents in parallel
+        loop = asyncio.get_event_loop()
+        technical_result = await technical.analyze(market_data)
+        sentiment_result = await sentiment.analyze(market_data)
+        fundamental_result = await fundamental.analyze(market_data)
+        risk_result = await risk.analyze(market_data)
+        portfolio_result = await portfolio.analyze(market_data)
+
+        # Aggregate
+        aggregation = {
+            'symbol': symbol,
+            'recommendation': 'BUY',  # Majority vote
+            'confidence': 70,
+            'risk_level': 'MEDIUM',
+            'technical_rec': technical_result.get('recommendation'),
+            'technical_conf': technical_result.get('confidence'),
+            'sentiment_rec': sentiment_result.get('recommendation'),
+            'sentiment_conf': sentiment_result.get('confidence'),
+            'fundamental_rec': fundamental_result.get('recommendation'),
+            'fundamental_conf': fundamental_result.get('confidence'),
+            'risk_rec': risk_result.get('recommendation'),
+            'risk_conf': risk_result.get('confidence'),
+            'portfolio_rec': portfolio_result.get('recommendation'),
+            'portfolio_conf': portfolio_result.get('confidence'),
+            'entry_zone': technical_result.get('entry_zone'),
+            'stop_loss': risk_result.get('stop_loss'),
+            'target': technical_result.get('target'),
+            'timeframe': '24-48h'
+        }
+
+        # Get intelligence analysis
+        intelligence_result = await intelligence.analyze(aggregation)
+        aggregation['intelligence_brief'] = intelligence_result
+
+        # Store decision
+        decision = TradeDecision(**aggregation, cio_decision='PENDING')
+        db.session.add(decision)
+        db.session.commit()
+
+        return {
+            'success': True,
+            'decision_id': decision.id,
+            'aggregation': aggregation,
+            'intelligence': intelligence_result
+        }, 200
+
+    except Exception as e:
+        logger.error(f"Analysis error: {e}")
+        return {'error': str(e)}, 500
+
+@api_bp.route('/execute', methods=['POST'])
+@require_auth
+def execute_trade():
+    """Execute trade based on CIO approval"""
+    try:
+        data = request.json
+        decision_id = data.get('decision_id')
+        cio_decision = data.get('cio_decision', 'SKIP')  # EXECUTE, SKIP, MODIFY
+
+        # Check circuit breaker
+        if circuit_breaker.is_paused():
+            return {'error': 'Circuit breaker triggered'}, 503
+
+        decision = TradeDecision.query.get(decision_id)
+        if not decision:
+            return {'error': 'Decision not found'}, 404
+
+        # Update CIO decision
+        decision.cio_decision = cio_decision
+
+        if cio_decision != 'EXECUTE':
+            db.session.commit()
+            return {'success': True, 'message': f'Trade {cio_decision}'}
+
+        # Execute trade
+        from config.settings import Config
+        if not Config.TRADING_ENABLED:
+            return {'error': 'Trading disabled'}, 403
+
+        # Place order
+        symbol = decision.symbol + 'USDT'
+        side = 'buy' if decision.recommendation == 'BUY' else 'sell'
+        position_size = float(decision.risk_rec) * 100 if decision.risk_rec else 1000
+
+        order_result = bitget_client.place_order(
+            symbol=symbol,
+            side=side,
+            order_type='market',
+            size=position_size / float(decision.entry_zone or 40000)
+        )
+
+        if order_result['success']:
+            # Log trade
+            trade = Trade(
+                trade_decision_id=decision_id,
+                bitget_order_id=order_result['order_id'],
+                coin=decision.symbol,
+                direction=side.upper(),
+                quantity=position_size,
+                planned_entry_price=float(decision.entry_zone or 40000),
+                stop_loss=float(decision.stop_loss or 39000),
+                take_profit_1=float(decision.target or 41000),
+                status='OPEN',
+                agent_confidence=decision.confidence,
+                risk_level=decision.risk_level,
+                cio_decision=cio_decision
+            )
+
+            db.session.add(trade)
+            db.session.commit()
+
+            return {
+                'success': True,
+                'trade_id': trade.id,
+                'order_id': order_result['order_id'],
+                'message': f'Trade executed: {side.upper()} {symbol}'
+            }, 200
+        else:
+            return {'error': order_result.get('error')}, 400
+
+    except Exception as e:
+        logger.error(f"Execution error: {e}")
+        return {'error': str(e)}, 500
+
+# ===== BACKTESTING =====
+
+@api_bp.route('/backtest', methods=['POST'])
+@require_auth
+async def run_backtest():
+    """Run backtest with walk-forward validation"""
+    try:
+        data = request.json
+        symbol = data.get('symbol', 'BTC')
+        start_date = datetime.fromisoformat(data.get('start_date'))
+        end_date = datetime.fromisoformat(data.get('end_date'))
+
+        # Validate dates
+        if (end_date - start_date).days < 60:
+            return {'error': 'Minimum 60 days required'}, 400
+
+        # Initialize agents
+        technical = TechnicalAgent()
+        sentiment = SentimentAgent()
+        fundamental = FundamentalAgent()
+        risk = RiskAgent()
+        portfolio = PortfolioAgent()
+
+        agents = [technical, sentiment, fundamental, risk, portfolio]
+
+        # Run backtest
+        result = await backtest_engine.run_backtest(symbol, start_date, end_date, agents)
+
+        if result.get('error'):
+            return {'error': result['error']}, 400
+
+        return {
+            'success': True,
+            'backtest_id': result.get('result_id'),
+            'metrics': result.get('metrics'),
+            'overfitting': result.get('overfitting'),
+            'windows': result.get('walk_forward_windows')
+        }, 200
+
+    except Exception as e:
+        logger.error(f"Backtest error: {e}")
+        return {'error': str(e)}, 500
+
+@api_bp.route('/backtest/<int:backtest_id>', methods=['GET'])
+@require_auth
+def get_backtest(backtest_id):
+    """Fetch backtest results"""
+    result = BacktestResult.query.get(backtest_id)
+    if not result:
+        return {'error': 'Backtest not found'}, 404
+
+    return {
+        'id': result.id,
+        'symbol': result.symbol,
+        'metrics': {
+            'total_trades': result.total_trades,
+            'win_rate': float(result.win_rate) if result.win_rate else 0,
+            'total_pnl': float(result.total_pnl_usdt) if result.total_pnl_usdt else 0,
+            'sharpe_ratio': float(result.sharpe_ratio) if result.sharpe_ratio else 0,
+            'max_drawdown': float(result.max_drawdown_pct) if result.max_drawdown_pct else 0
+        },
+        'overfitting_risk': result.overfitting_risk,
+        'trades': result.trades  # JSON
+    }, 200
+
+# ===== DATA & MONITORING =====
+
+@api_bp.route('/intelligence-logs', methods=['GET'])
+def intelligence_logs():
+    """Get market intelligence reports"""
+    limit = request.args.get('limit', 50, type=int)
+    decisions = TradeDecision.query.order_by(TradeDecision.created_at.desc()).limit(limit).all()
+
+    return {
+        'logs': [
+            {
+                'timestamp': d.created_at.isoformat(),
+                'symbol': d.symbol,
+                'headline': f"{d.recommendation} @ {d.confidence}%",
+                'recommendation': d.recommendation,
+                'confidence': d.confidence,
+                'risk_level': d.risk_level,
+                'data': {
+                    'technical': d.technical_rec,
+                    'sentiment': d.sentiment_rec,
+                    'fundamental': d.fundamental_rec
+                }
+            }
+            for d in decisions
+        ]
+    }, 200
+
+@api_bp.route('/trades', methods=['GET'])
+def get_trades():
+    """Get trade history"""
+    limit = request.args.get('limit', 100, type=int)
+    status = request.args.get('status')
+
+    query = Trade.query
+    if status:
+        query = query.filter_by(status=status)
+
+    trades = query.order_by(Trade.created_at.desc()).limit(limit).all()
+
+    return {
+        'trades': [
+            {
+                'id': t.id,
+                'symbol': t.coin,
+                'direction': t.direction,
+                'status': t.status,
+                'entry_price': float(t.actual_entry_price or t.planned_entry_price),
+                'quantity': float(t.quantity),
+                'pnl': float(t.net_pnl_usdt) if t.net_pnl_usdt else None,
+                'opened_at': t.opened_at.isoformat(),
+                'closed_at': t.closed_at.isoformat() if t.closed_at else None,
+                'cio_decision': t.cio_decision
+            }
+            for t in trades
+        ]
+    }, 200
+
+@api_bp.route('/balance', methods=['GET'])
+def get_balance():
+    """Get current balance"""
+    result = bitget_client.get_balance()
+
+    if result['success']:
+        return {
+            'success': True,
+            'balances': result['balances'],
+            'total_usd': sum(float(b['total']) * (40000 if 'BTC' in coin else 2000 if 'ETH' in coin else 1)
+                           for coin, b in result['balances'].items())
+        }, 200
+
+    return {'error': result.get('error')}, 500
