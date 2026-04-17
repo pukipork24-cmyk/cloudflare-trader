@@ -1411,11 +1411,41 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
       </div>
       <button id="btnAnalyze" onclick="runClaudeAnalysis()" style="width:100%;background:var(--gold);color:#000;border:none;padding:10px 16px;border-radius:8px;cursor:pointer;font-weight:800;font-size:13px;margin-top:12px;transition:all 0.2s;box-shadow:0 4px 15px rgba(240,165,0,0.3)">▶ RUN ANALYSIS</button>
     </div>
+    <!-- Panel Tabs -->
+    <div style="display:flex;border-bottom:1px solid var(--bdr);background:var(--surf);gap:0;border-radius:0">
+      <button id="tab-history" style="flex:1;padding:.5rem;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border-bottom:2px solid #00d4ff;transition:all .2s" onclick="switchPanel('history')">📊 History</button>
+      <button id="tab-evolution" style="flex:1;padding:.5rem;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border-bottom:2px solid transparent;transition:all .2s" onclick="switchPanel('evolution');fetchEvolutionStatus()">🧬 Evolution</button>
+    </div>
+
     <div class="row-resizer"></div>
+
+    <!-- Trade History Panel -->
     <div class="panel" id="panel-log" style="flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:60px">
       <div class="ph"><div class="ph-title">Trade History</div></div>
       <div class="log-wrap" id="logWrap">
         <div style="color:var(--muted);font-size:.7rem;text-align:center;padding:.5rem">Awaiting trades...</div>
+      </div>
+    </div>
+
+    <!-- Evolution Control Panel (HIDDEN BY DEFAULT) -->
+    <div class="panel" id="panel-evolution" style="flex:1;overflow-y:auto;display:none;flex-direction:column;min-height:60px">
+      <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid #0f3460;border-radius:10px;padding:1rem;margin-bottom:.75rem">
+        <div style="font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">Latest Evolution</div>
+        <div style="font-size:.9rem;font-weight:700;color:#00d4ff;margin-bottom:.35rem" id="evo-timestamp">Never</div>
+        <div style="font-size:.7rem;color:var(--muted)">Status: <span id="evo-status" style="color:#ffd600">Idle</span></div>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:.25rem">Total Cycles: <span id="evo-count" style="color:#fff;font-weight:600">0</span></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1rem">
+        <button style="background:linear-gradient(135deg,#00c853,#00e676);color:#000;border:none;border-radius:10px;padding:.7rem;cursor:pointer;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.1em;transition:transform .1s,box-shadow .2s" onclick="approveEvolution()">✓ Approve</button>
+        <button style="background:linear-gradient(135deg,#c62828,#ff2d55);color:#fff;border:none;border-radius:10px;padding:.7rem;cursor:pointer;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.1em;transition:transform .1s,box-shadow .2s" onclick="declineEvolution()">✕ Decline</button>
+      </div>
+
+      <div style="background:var(--card2);border:1px solid var(--bdr);border-radius:8px;padding:.75rem;margin-bottom:1rem;font-size:.7rem">
+        <div style="color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem;font-weight:700">Current Parameters</div>
+        <div id="evo-params" style="font-family:monospace;color:#ffd460;line-height:1.6;max-height:150px;overflow-y:auto">
+          <div style="color:var(--muted)">Loading...</div>
+        </div>
       </div>
     </div>
   </div>
@@ -2417,6 +2447,108 @@ function applyInterval(){
   S.cd = refreshInterval;
 }
 
+// ── Evolution Control ────────────────────────────────────────────────────
+const RAILWAY_BASE='https://cloudflare-trader-production-xxxx.railway.app';
+
+function switchPanel(panel){
+  const historyPanel = document.getElementById('panel-log');
+  const evolutionPanel = document.getElementById('panel-evolution');
+  const historyTab = document.getElementById('tab-history');
+  const evolutionTab = document.getElementById('tab-evolution');
+
+  if(panel === 'history'){
+    historyPanel.style.display = 'flex';
+    evolutionPanel.style.display = 'none';
+    historyTab.style.borderBottomColor = '#00d4ff';
+    evolutionTab.style.borderBottomColor = 'transparent';
+  } else {
+    historyPanel.style.display = 'none';
+    evolutionPanel.style.display = 'flex';
+    historyTab.style.borderBottomColor = 'transparent';
+    evolutionTab.style.borderBottomColor = '#00d4ff';
+  }
+}
+
+async function fetchEvolutionStatus(){
+  try{
+    const r=await fetch(`${RAILWAY_BASE}/api/evolution/status`);
+    const data=await r.json();
+    if(data.success && data.status){
+      updateEvolutionUI(data.status);
+    }
+  }catch(e){
+    console.error('Failed to fetch evolution status:',e);
+  }
+}
+
+function updateEvolutionUI(status){
+  const tsEl=document.getElementById('evo-timestamp');
+  if(status.last_evolution){
+    const d=new Date(status.last_evolution);
+    tsEl.textContent=d.toLocaleString('en-US',{hour12:false});
+  }else{
+    tsEl.textContent='Never';
+  }
+
+  document.getElementById('evo-count').textContent=status.evolution_count||0;
+
+  const statusEl=document.getElementById('evo-status');
+  statusEl.textContent='Ready';
+  statusEl.style.color='#00e676';
+
+  const paramsEl=document.getElementById('evo-params');
+  if(status.current_params && typeof status.current_params==='object'){
+    const lines=Object.entries(status.current_params).map(([k,v])=>{
+      const val=typeof v==='number'?v.toFixed(1):v;
+      return `<div>${k}: <span style="color:#ffd460">${val}</span></div>`;
+    });
+    paramsEl.innerHTML=lines.join('');
+  }
+}
+
+async function approveEvolution(){
+  try{
+    const btn=event.target;
+    btn.disabled=true;
+    btn.textContent='⏳ Executing...';
+
+    const r=await fetch(`${RAILWAY_BASE}/api/evolution/optimize`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({approve:true})
+    });
+    const data=await r.json();
+
+    if(data.success){
+      btn.textContent='✓ Evolution Running';
+      btn.style.opacity='0.7';
+      setTimeout(async ()=>{
+        fetchEvolutionStatus();
+        btn.disabled=false;
+        btn.textContent='✓ Approve';
+        btn.style.opacity='1';
+      },2000);
+    }else{
+      btn.textContent='✗ Failed: '+data.error;
+      setTimeout(()=>{
+        btn.disabled=false;
+        btn.textContent='✓ Approve';
+      },2000);
+    }
+  }catch(e){
+    console.error('Approval failed:',e);
+    event.target.textContent='✗ Error';
+    setTimeout(()=>{event.target.textContent='✓ Approve'},2000);
+  }
+}
+
+function declineEvolution(){
+  alert('Evolution cycle declined and will not execute.');
+  console.log('Evolution declined by user');
+}
+
+setInterval(fetchEvolutionStatus,30000);
+
 // ── Claude AI Analysis ────────────────────────────────────────────────────
 function runClaudeAnalysis(){
   var btn = document.getElementById('btnAnalyze');
@@ -2805,6 +2937,7 @@ function init(){
   try{ fetchCandles('15m', 60); } catch(e){}
   try{ fetchAI(); }               catch(e){}
   try{ fetchTicker(); }           catch(e){}
+  try{ fetchEvolutionStatus(); }  catch(e){}
   // Periodic refresh
   setInterval(function(){ try{ fetchTicker(); }catch(e){} },  5000);
   setInterval(function(){ try{ fetchCandles('15m',60); }catch(e){} }, 30000);
