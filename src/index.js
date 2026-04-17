@@ -1607,11 +1607,11 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
       const level = log.level || 'INFO';
       const msg = log.message || log.headline || 'System event';
       const color = level === 'ERROR' ? 'var(--red)' : level === 'SUCCESS' ? 'var(--green)' : level === 'WARN' ? 'var(--yellow)' : '#0099ff';
-      return `<div style="padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px; display: flex; gap: 12px; border-left: 3px solid ${color};">
-        <span style="color: var(--txt-dim); min-width: 70px;">${time}</span>
-        <span style="color: ${color}; font-weight: 600; min-width: 60px;">[${level}]</span>
-        <span style="color: var(--txt); flex: 1;">${msg}</span>
-      </div>`;
+      return '<div style="padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px; display: flex; gap: 12px; border-left: 3px solid ' + color + ';">' +
+        '<span style="color: var(--txt-dim); min-width: 70px;">' + time + '</span>' +
+        '<span style="color: ' + color + '; font-weight: 600; min-width: 60px;">[' + level + ']</span>' +
+        '<span style="color: var(--txt); flex: 1;">' + msg + '</span>' +
+        '</div>';
     }).join('');
     if (logAutoScroll) stream.scrollTop = stream.scrollHeight;
   }
@@ -1623,11 +1623,12 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   function exportLogs(fmt) {
     if (!allLogs.length) { alert('No logs to export'); return; }
     const content = fmt === 'json' ? JSON.stringify(allLogs, null, 2) :
-      [['Time','Level','Message'], ...allLogs.map(l => [l.timestamp, l.level, l.message])].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+      [['Time','Level','Message'], ...allLogs.map(l => [l.timestamp, l.level, l.message])].map(r => r.map(c => '"' + c + '"').join(',')).join('\n');
     const blob = new Blob([content], { type: fmt === 'json' ? 'application/json' : 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `logs_${new Date().toISOString().split('T')[0]}.${fmt}`;
+    const dateStr = new Date().toISOString().split('T')[0];
+    a.download = 'logs_' + dateStr + '.' + fmt;
     a.click();
   }
 
@@ -2471,8 +2472,9 @@ function switchPanel(panel){
 
 async function fetchEvolutionStatus(){
   try{
-    const r=await fetch(`${RAILWAY_BASE}/api/evolution/status`);
-    const data=await r.json();
+    const url = RAILWAY_BASE + '/api/evolution/status';
+    const r = await fetch(url);
+    const data = await r.json();
     if(data.success && data.status){
       updateEvolutionUI(data.status);
     }
@@ -2498,9 +2500,11 @@ function updateEvolutionUI(status){
 
   const paramsEl=document.getElementById('evo-params');
   if(status.current_params && typeof status.current_params==='object'){
-    const lines=Object.entries(status.current_params).map(([k,v])=>{
+    const lines=Object.entries(status.current_params).map(function(kv){
+      const k = kv[0];
+      const v = kv[1];
       const val=typeof v==='number'?v.toFixed(1):v;
-      return `<div>${k}: <span style="color:#ffd460">${val}</span></div>`;
+      return '<div>' + k + ': <span style="color:#ffd460">' + val + '</span></div>';
     });
     paramsEl.innerHTML=lines.join('');
   }
@@ -2512,7 +2516,8 @@ async function approveEvolution(){
     btn.disabled=true;
     btn.textContent='⏳ Executing...';
 
-    const r=await fetch(`${RAILWAY_BASE}/api/evolution/optimize`,{
+    const url = RAILWAY_BASE + '/api/evolution/optimize';
+    const r=await fetch(url,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({approve:true})
@@ -2522,7 +2527,7 @@ async function approveEvolution(){
     if(data.success){
       btn.textContent='✓ Evolution Running';
       btn.style.opacity='0.7';
-      setTimeout(async ()=>{
+      setTimeout(async function(){
         fetchEvolutionStatus();
         btn.disabled=false;
         btn.textContent='✓ Approve';
@@ -2530,7 +2535,7 @@ async function approveEvolution(){
       },2000);
     }else{
       btn.textContent='✗ Failed: '+data.error;
-      setTimeout(()=>{
+      setTimeout(function(){
         btn.disabled=false;
         btn.textContent='✓ Approve';
       },2000);
@@ -2538,7 +2543,7 @@ async function approveEvolution(){
   }catch(e){
     console.error('Approval failed:',e);
     event.target.textContent='✗ Error';
-    setTimeout(()=>{event.target.textContent='✓ Approve'},2000);
+    setTimeout(function(){event.target.textContent='✓ Approve'},2000);
   }
 }
 
