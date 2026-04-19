@@ -1,5 +1,4 @@
 """Bitget API client with real trading capabilities"""
-import os
 import logging
 import requests
 import hmac
@@ -8,15 +7,24 @@ import json
 import time
 from datetime import datetime
 
+from config.settings import Config
+
 logger = logging.getLogger(__name__)
+
+
+def _env_str(value):
+    if value is None:
+        return ''
+    return str(value).strip()
+
 
 class BitgetClient:
     def __init__(self):
-        self.api_key = os.getenv('BITGET_API_KEY', '')
-        self.api_secret = os.getenv('BITGET_API_SECRET', '')
-        self.passphrase = os.getenv('BITGET_PASSPHRASE', '')
+        self.api_key = _env_str(Config.BITGET_API_KEY)
+        self.api_secret = _env_str(Config.BITGET_SECRET_KEY)
+        self.passphrase = _env_str(Config.BITGET_PASSPHRASE)
         self.base_url = 'https://api.bitget.com'
-        self.available = bool(self.api_key and self.api_secret)
+        self.available = bool(self.api_key and self.api_secret and self.passphrase)
 
         if self.available:
             logger.info("✓ Bitget client initialized (mainnet)")
