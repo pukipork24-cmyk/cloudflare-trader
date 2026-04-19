@@ -1398,7 +1398,6 @@ Rules:
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>pukitradev2 - AI Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <style>
 :root{
   --bg:#060d18;--surf:#0d1726;--card:#121f30;--card2:#17273d;
@@ -2316,49 +2315,19 @@ body::after{
       </div>
       <div class="ch-label"><strong id="ch-label-sym">BTC / USDT</strong>AI Trading System · Live</div>
     </div>
-    <!-- AI Analyzed Chart (replaces mini price chart) -->
-    <div id="aiChartPanel" style="flex:1;display:flex;flex-direction:column;padding:1rem;background:rgba(0,0,0,0.2);border-radius:8px;margin:0.75rem">
+    <!-- Mini Price Chart -->
+    <div style="flex:1;display:flex;flex-direction:column;padding:1rem;background:rgba(0,0,0,0.2);border-radius:8px;margin:0.75rem">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem">
-        <div style="display:flex;flex-direction:column;gap:2px">
-          <div style="color:var(--txt-dim);font-size:0.85rem" id="aiChartTitle">AI chart · Binance candles</div>
-          <div style="color:var(--muted);font-size:0.72rem" id="aiChartSub">--</div>
-        </div>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
-          <select id="aiSym" class="pill" style="padding:6px 10px;border-radius:999px;font-size:12px">
-            <option value="BTCUSDT">BTC/USDT</option>
-            <option value="ETHUSDT">ETH/USDT</option>
-            <option value="SOLUSDT">SOL/USDT</option>
-            <option value="BNBUSDT">BNB/USDT</option>
-          </select>
-          <select id="aiTf" class="pill" style="padding:6px 10px;border-radius:999px;font-size:12px">
-            <option value="1d">1d</option>
-            <option value="1w">1w</option>
-          </select>
-          <select id="aiRange" class="pill" style="padding:6px 10px;border-radius:999px;font-size:12px">
-            <option value="1w">1W</option>
-            <option value="1m" selected>1M</option>
-            <option value="3m">3M</option>
-            <option value="1y">1Y</option>
-            <option value="3y">3Y</option>
-            <option value="all">ALL</option>
-          </select>
-          <button type="button" class="pc-range-btn" id="aiLoadBtn" style="padding:6px 10px">Load</button>
-          <button type="button" class="btn-ui btn-ui-primary" id="aiAnalyzeBtn" style="padding:6px 12px">Analyze</button>
-          <label style="display:flex;align-items:center;gap:6px;color:var(--muted);font-size:11px;padding:6px 8px;border:1px solid rgba(255,255,255,0.08);border-radius:999px;background:rgba(0,0,0,0.18)">
-            <input type="checkbox" id="aiLog" style="transform:translateY(1px)"> Log
-          </label>
+        <div style="color:var(--txt-dim);font-size:0.85rem" id="priceChartTitle">Price chart · last 24 hours</div>
+        <div id="priceChartRangeBtns" style="display:flex;gap:4px;flex-wrap:wrap">
+          <button type="button" class="pc-range-btn" data-range="24h">24H</button>
+          <button type="button" class="pc-range-btn" data-range="week">Week</button>
+          <button type="button" class="pc-range-btn" data-range="month">Month</button>
+          <button type="button" class="pc-range-btn" data-range="year">Year</button>
         </div>
       </div>
       <div style="flex:1;position:relative;min-height:180px">
-        <div id="aiChart" class="chart-fade" style="position:absolute;inset:0"></div>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;flex-wrap:wrap">
-        <div style="display:flex;gap:12px;align-items:center;color:var(--muted);font-size:12px">
-          <label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" id="aiTgPrice" checked> Price</label>
-          <label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" id="aiTgMA" checked> MA200</label>
-          <label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" id="aiTgAI"> AI</label>
-        </div>
-        <div id="aiChartStatus" style="color:var(--muted);font-size:11px">Ready</div>
+        <canvas id="priceChart" class="chart-fade"></canvas>
       </div>
     </div>
   </div>
@@ -3047,12 +3016,6 @@ function renderPriceChart() {
 
 // Fetch price data on page load and refresh every 5 minutes
 window.addEventListener('load', function() {
-  // If the legacy mini price chart exists, it can still run; otherwise we initialize the AI chart panel.
-  if (document.getElementById('aiChart')) {
-    try { initAiDashboardChart(); } catch(e) { console.warn('initAiDashboardChart failed', e); }
-    return;
-  }
-
   try {
     var saved = localStorage.getItem('priceChartRange');
     if (saved && PRICE_CHART_RANGE_LABELS[saved]) priceChartRange = saved;
@@ -3078,308 +3041,6 @@ window.addEventListener('load', function() {
     fetchPriceData(sym);
   }, 5 * 60 * 1000);
 });
-
-// ── AI chart panel (Lightweight Charts + Binance + DeepSeek) ────────────────
-function initAiDashboardChart() {
-  if (!window.LightweightCharts) {
-    console.warn('LightweightCharts missing');
-    return;
-  }
-  var chartEl = document.getElementById('aiChart');
-  if (!chartEl) return;
-
-  var titleEl = document.getElementById('aiChartTitle');
-  var subEl = document.getElementById('aiChartSub');
-  var statusEl = document.getElementById('aiChartStatus');
-  var symEl = document.getElementById('aiSym');
-  var tfEl = document.getElementById('aiTf');
-  var rangeEl = document.getElementById('aiRange');
-  var btnLoad = document.getElementById('aiLoadBtn');
-  var btnAnalyze = document.getElementById('aiAnalyzeBtn');
-  var logEl = document.getElementById('aiLog');
-
-  var tgPrice = document.getElementById('aiTgPrice');
-  var tgMA = document.getElementById('aiTgMA');
-  var tgAI = document.getElementById('aiTgAI');
-
-  function setStatus(t){ if(statusEl) statusEl.textContent = t || ''; }
-  function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
-  function safeNum(x){ var n = Number(x); return Number.isFinite(n) ? n : null; }
-
-  // Default symbol from existing trading target if present
-  try {
-    var current = (document.getElementById('currentSymbolLabel')?.textContent || '').replace('/','').trim();
-    if (current) {
-      var map = { 'BTCUSDT':'BTCUSDT','ETHUSDT':'ETHUSDT','SOLUSDT':'SOLUSDT','BNBUSDT':'BNBUSDT' };
-      var sym = map[current] || (current.endsWith('USDT') ? current : '');
-      if (sym && symEl) symEl.value = sym;
-    }
-  } catch(e) {}
-
-  var chart = LightweightCharts.createChart(chartEl, {
-    layout: { background: { color: '#060d18' }, textColor: '#e5eefb', fontFamily: "Inter, 'Segoe UI', system-ui, sans-serif" },
-    grid: { vertLines: { color: 'rgba(36,56,82,0.35)' }, horzLines: { color: 'rgba(36,56,82,0.35)' } },
-    rightPriceScale: { borderColor: 'rgba(36,56,82,0.8)' },
-    timeScale: { borderColor: 'rgba(36,56,82,0.8)', timeVisible: true, secondsVisible: false },
-    crosshair: { mode: 0 }
-  });
-
-  var candleSeries = chart.addCandlestickSeries({
-    upColor: '#38d39f', downColor: '#f37d8f',
-    borderUpColor: '#38d39f', borderDownColor: '#f37d8f',
-    wickUpColor: 'rgba(56,211,159,0.9)', wickDownColor: 'rgba(243,125,143,0.9)'
-  });
-  var priceSeries = chart.addLineSeries({ color: '#f0c27a', lineWidth: 2, priceLineVisible: false });
-  var maSeries = chart.addLineSeries({ color: '#e5eefb', lineWidth: 1, priceLineVisible: false });
-  var aiSeries = chart.addLineSeries({ color: '#6ec2ff', lineWidth: 2, priceLineVisible: false, visible: false });
-
-  var currentCandles = [];
-  var keyLevelLines = [];
-
-  function clearKeyLevels(){
-    if(!keyLevelLines || keyLevelLines.length === 0) return;
-    try { keyLevelLines.forEach(function(pl){ candleSeries.removePriceLine(pl); }); } catch(e) {}
-    keyLevelLines = [];
-  }
-
-  function setKeyLevels(levels){
-    clearKeyLevels();
-    if(!levels) return;
-    var buy = safeNum(levels.buy_zone);
-    var fair = safeNum(levels.fair_value);
-    var res = safeNum(levels.resistance);
-    var lines = [];
-    if(buy !== null) lines.push({ price: buy, color: 'rgba(56,211,159,0.75)', title: 'Buy zone' });
-    if(fair !== null) lines.push({ price: fair, color: 'rgba(240,194,122,0.80)', title: 'Fair value' });
-    if(res !== null) lines.push({ price: res, color: 'rgba(243,125,143,0.75)', title: 'Resistance' });
-    lines.forEach(function(l){
-      var pl = candleSeries.createPriceLine({
-        price: l.price,
-        color: l.color,
-        lineWidth: 2,
-        lineStyle: 2,
-        axisLabelVisible: true,
-        title: l.title
-      });
-      keyLevelLines.push(pl);
-    });
-  }
-
-  function setSeriesVisibility(){
-    priceSeries.applyOptions({ visible: !!tgPrice?.checked });
-    maSeries.applyOptions({ visible: !!tgMA?.checked });
-    aiSeries.applyOptions({ visible: !!tgAI?.checked });
-  }
-
-  function rangeStartMs(rangeId){
-    var now = Date.now();
-    var day = 24*60*60*1000;
-    if(rangeId === '1w') return now - 7*day;
-    if(rangeId === '1m') return now - 30*day;
-    if(rangeId === '3m') return now - 90*day;
-    if(rangeId === '1y') return now - 365*day;
-    if(rangeId === '3y') return now - 3*365*day;
-    return 0;
-  }
-
-  async function fetchKlines(symbol, interval, startTime){
-    var out = [];
-    var next = startTime || 0;
-    var loops = 0;
-    while(true){
-      loops++;
-      if(loops > 20) break;
-      var qs = new URLSearchParams();
-      qs.set('symbol', symbol);
-      qs.set('interval', interval);
-      qs.set('limit', '1000');
-      if(next && next > 0) qs.set('startTime', String(next));
-      var url = 'https://api.binance.com/api/v3/klines?' + qs.toString();
-      var r = await fetch(url);
-      if(!r.ok) throw new Error('Binance error ' + r.status);
-      var arr = await r.json();
-      if(!Array.isArray(arr) || arr.length === 0) break;
-      out = out.concat(arr);
-      if(arr.length < 1000) break;
-      var lastOpen = Number(arr[arr.length - 1][0]) || 0;
-      if(!lastOpen) break;
-      var newNext = lastOpen + 1;
-      if(newNext <= next) break;
-      next = newNext;
-      if(out.length >= 5000) break;
-    }
-    return out;
-  }
-
-  function normalizeKlines(arr){
-    return arr.map(function(k){
-      var t = Number(k[0]);
-      return { t: t, o: Number(k[1]), h: Number(k[2]), l: Number(k[3]), c: Number(k[4]), v: Number(k[5]) };
-    }).filter(function(c){
-      return Number.isFinite(c.t)&&Number.isFinite(c.o)&&Number.isFinite(c.h)&&Number.isFinite(c.l)&&Number.isFinite(c.c)&&Number.isFinite(c.v);
-    });
-  }
-
-  function toCandleData(candles){
-    return candles.map(function(c){
-      return { time: Math.floor(c.t/1000), open: c.o, high: c.h, low: c.l, close: c.c };
-    });
-  }
-
-  function toLineClose(candles){
-    return candles.map(function(c){ return { time: Math.floor(c.t/1000), value: c.c }; });
-  }
-
-  function computeMA(candles, period){
-    var out = [];
-    var sum = 0;
-    for(var i=0;i<candles.length;i++){
-      sum += candles[i].c;
-      if(i >= period) sum -= candles[i - period].c;
-      if(i >= period - 1){
-        out.push({ time: Math.floor(candles[i].t/1000), value: sum / period });
-      }
-    }
-    return out;
-  }
-
-  function alignIndicator(values, candles){
-    if(!Array.isArray(values) || !candles || candles.length === 0) return [];
-    var n = candles.length;
-    var vals = values.map(function(x){ return safeNum(x); }).filter(function(x){ return x !== null; });
-    if(vals.length === 0) return [];
-    if(vals.length > n) vals = vals.slice(vals.length - n);
-    if(vals.length < n){
-      var pad = new Array(n - vals.length);
-      for(var i=0;i<pad.length;i++) pad[i] = vals[0];
-      vals = pad.concat(vals);
-    }
-    var out = [];
-    for(var j=0;j<n;j++){
-      out.push({ time: Math.floor(candles[j].t/1000), value: vals[j] });
-    }
-    return out;
-  }
-
-  function setSubtitle(){
-    if(!subEl) return;
-    var sym = symEl?.value || '--';
-    var tf = tfEl?.value || '--';
-    var rng = rangeEl?.options?.[rangeEl.selectedIndex]?.text || '--';
-    subEl.textContent = sym + ' · ' + tf + ' · ' + rng;
-  }
-
-  async function loadChart(){
-    setSubtitle();
-    setStatus('Loading candles...');
-    btnLoad && (btnLoad.disabled = true);
-    btnAnalyze && (btnAnalyze.disabled = true);
-    try {
-      var symbol = symEl.value;
-      var interval = tfEl.value;
-      var start = rangeStartMs(rangeEl.value);
-      var raw = await fetchKlines(symbol, interval, start);
-      var candles = normalizeKlines(raw);
-      if(start && start > 0) candles = candles.filter(function(c){ return c.t >= start; });
-      if(candles.length < 30) throw new Error('Not enough candles returned');
-      currentCandles = candles;
-
-      candleSeries.setData(toCandleData(candles));
-      priceSeries.setData(toLineClose(candles));
-      maSeries.setData(computeMA(candles, 200));
-      aiSeries.setData([]);
-      aiSeries.applyOptions({ visible: false, color: '#6ec2ff' });
-      tgAI && (tgAI.checked = false);
-      clearKeyLevels();
-      setSeriesVisibility();
-      chart.timeScale().fitContent();
-      setStatus('Loaded ' + candles.length + ' candles');
-    } finally {
-      btnLoad && (btnLoad.disabled = false);
-      btnAnalyze && (btnAnalyze.disabled = false);
-    }
-  }
-
-  async function analyze(){
-    if(!currentCandles || currentCandles.length < 50){
-      alert('Load more candle data first (need at least 50).');
-      return;
-    }
-    setStatus('Analyzing...');
-    btnAnalyze && (btnAnalyze.disabled = true);
-    try {
-      var symbol = symEl.value;
-      var timeframe = tfEl.value;
-      var last = currentCandles.slice(Math.max(0, currentCandles.length - 200));
-      var payload = { symbol: symbol, timeframe: timeframe, candles: last };
-      var r = await fetch('/api/chart/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      var d = await r.json();
-      if(!r.ok) throw new Error(d && d.error ? d.error : ('HTTP ' + r.status));
-
-      setKeyLevels(d.key_levels || {});
-      if(d.custom_indicator && Array.isArray(d.custom_indicator.values)){
-        var color = d.custom_indicator.color || '#6ec2ff';
-        var aligned = alignIndicator(d.custom_indicator.values, currentCandles);
-        if(aligned.length > 0){
-          aiSeries.applyOptions({ color: color, visible: true });
-          aiSeries.setData(aligned);
-          tgAI && (tgAI.checked = true);
-        }
-      }
-      setSeriesVisibility();
-      setStatus('AI: ' + String(d.recommendation || 'OK') + ' · conf ' + clamp(Number(d.confidence)||0,0,100) + '%');
-
-      // Save last 5 analyses (dashboard-specific key)
-      try {
-        var key = 'analysis_history_v1:dashboard:' + symbol + ':' + timeframe;
-        var arr = [];
-        try { arr = JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) { arr = []; }
-        if (!Array.isArray(arr)) arr = [];
-        arr.unshift(Object.assign({}, d, { when: new Date().toLocaleString() }));
-        arr = arr.slice(0, 5);
-        localStorage.setItem(key, JSON.stringify(arr));
-      } catch(e) {}
-
-      if (logEl && logEl.checked) console.log('AI chart analysis', d);
-    } catch(e){
-      console.error(e);
-      alert('AI analyze failed: ' + e.message);
-      setStatus('Analyze failed');
-    } finally {
-      btnAnalyze && (btnAnalyze.disabled = false);
-    }
-  }
-
-  function resize(){
-    chart.applyOptions({ width: chartEl.clientWidth, height: chartEl.clientHeight });
-  }
-
-  if (tgPrice) tgPrice.addEventListener('change', setSeriesVisibility);
-  if (tgMA) tgMA.addEventListener('change', setSeriesVisibility);
-  if (tgAI) tgAI.addEventListener('change', setSeriesVisibility);
-  if (btnLoad) btnLoad.addEventListener('click', loadChart);
-  if (btnAnalyze) btnAnalyze.addEventListener('click', analyze);
-  if (symEl) symEl.addEventListener('change', setSubtitle);
-  if (tfEl) tfEl.addEventListener('change', setSubtitle);
-  if (rangeEl) rangeEl.addEventListener('change', setSubtitle);
-  if (logEl) logEl.addEventListener('change', function(){});
-
-  if (document.getElementById('aiLog')) {
-    document.getElementById('aiLog').addEventListener('change', function(){
-      chart.applyOptions({ rightPriceScale: { mode: this.checked ? 1 : 0 } });
-    });
-  }
-
-  window.addEventListener('resize', function(){ resize(); });
-  resize();
-  setSeriesVisibility();
-  setSubtitle();
-  loadChart();
-}
 
 // ── Advanced Settings ──────────────────────────────────────────────────────
 function loadAdvancedSettings(){
