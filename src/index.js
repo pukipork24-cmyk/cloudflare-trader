@@ -2598,15 +2598,11 @@ function applyAI(d){
   // Calculate buy/sell ratio from latest agent results and win rate
   var buySignals = 0, sellSignals = 0, holdSignals = 0;
 
-  // Get recent signals from intelligence logs (last 10 reports)
-  if(intelligenceLogs && intelligenceLogs.length > 0) {
-    for(var i = 0; i < Math.min(10, intelligenceLogs.length); i++) {
-      var log = intelligenceLogs[i];
-      if(log.recommendation === 'BUY') buySignals++;
-      else if(log.recommendation === 'SELL') sellSignals++;
-      else holdSignals++;
-    }
-  }
+  // Note: Intelligence logs are server-side, not accessible from browser
+  // Default to equal distribution
+  buySignals = 1;
+  sellSignals = 1;
+  holdSignals = 1;
 
   // Calculate percentage: more buy signals = higher buy %
   var totalSignals = buySignals + sellSignals + holdSignals;
