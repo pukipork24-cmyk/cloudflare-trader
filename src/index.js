@@ -76,11 +76,11 @@ body{
   *{animation-duration:0.001ms !important;animation-iteration-count:1 !important;transition-duration:0.001ms !important;scroll-behavior:auto !important}
 }
 a{color:inherit;text-decoration:none}
-#app{height:100vh;display:flex;flex-direction:column;min-height:0}
+#app{height:100vh;display:flex;flex-direction:column;min-height:0;position:relative;z-index:1}
 #topbar{display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;
   background:linear-gradient(180deg,rgba(18,31,48,0.94),rgba(13,23,38,0.88));border-bottom:1px solid var(--bdr);backdrop-filter:blur(10px);min-height:54px}
 .topbar-shell{position:relative}
-.gradient-blur{position:fixed;z-index:4;inset:0 0 auto 0;height:12%;pointer-events:none}
+.gradient-blur{position:fixed;z-index:0;inset:0 0 auto 0;height:12%;pointer-events:none;opacity:.95}
 .gradient-blur > div,.gradient-blur::before,.gradient-blur::after{position:absolute;inset:0}
 .gradient-blur::before{content:"";z-index:1;backdrop-filter:blur(.5px);
   -webkit-mask:linear-gradient(to top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 12.5%, rgba(0,0,0,1) 25%, rgba(0,0,0,0) 37.5%);
@@ -1455,7 +1455,7 @@ body::after{
 }
 
 /* Apple-like glass edge blur */
-.gradient-blur{position:fixed;z-index:2;inset:0 0 auto 0;height:12%;pointer-events:none}
+.gradient-blur{position:fixed;z-index:0;inset:0 0 auto 0;height:12%;pointer-events:none;opacity:.95}
 .gradient-blur > div,.gradient-blur::before,.gradient-blur::after{position:absolute;inset:0}
 .gradient-blur::before{content:"";z-index:1;backdrop-filter:blur(.5px);
   -webkit-mask:linear-gradient(to top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 12.5%, rgba(0,0,0,1) 25%, rgba(0,0,0,0) 37.5%);
