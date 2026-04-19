@@ -196,4 +196,5 @@ class BitgetClient:
             return {"success": False, "error": str(e)}
 
 # Global instance
-bitget_client = BitgetClient()
+paper_mode = os.getenv('PAPER_TRADING_MODE', 'true').lower() == 'true'
+bitget_client = BitgetClient(paper_trading=paper_mode)

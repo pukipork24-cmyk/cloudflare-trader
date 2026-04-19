@@ -2043,14 +2043,17 @@ async function saveAdvancedSettings(){
       });
     }
 
-    var btn = event.target;
-    var origText = btn.textContent;
-    btn.textContent = '✓ Saved!';
-    btn.style.background = 'linear-gradient(135deg,#00c853,#00e676)';
-    setTimeout(function(){
-      btn.textContent = origText;
+    // Update button feedback
+    var btn = document.querySelector('button[onclick="saveAdvancedSettings()"]');
+    if(btn) {
+      var origText = btn.textContent;
+      btn.textContent = '✓ Saved!';
       btn.style.background = 'linear-gradient(135deg,#00c853,#00e676)';
-    }, 2000);
+      setTimeout(function(){
+        btn.textContent = origText;
+        btn.style.background = 'linear-gradient(135deg,#00c853,#00e676)';
+      }, 2000);
+    }
 
     console.log('✓ Advanced settings saved');
   }catch(e){
