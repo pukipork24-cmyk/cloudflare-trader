@@ -690,6 +690,17 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   background-image:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(54,111,170,0.22) 0%,transparent 70%),linear-gradient(var(--bdr) 1px,transparent 1px),linear-gradient(90deg,var(--bdr) 1px,transparent 1px);
   background-size:auto,64px 64px,64px 64px;opacity:.09;
   mask-image:radial-gradient(ellipse 80% 80% at 50% 0%,black 40%,transparent 100%)}
+body::after{
+  content:'';position:fixed;inset:-20%;pointer-events:none;z-index:0;
+  background:radial-gradient(circle at 22% 18%, rgba(126,203,255,0.08) 0%, transparent 34%),
+             radial-gradient(circle at 78% 70%, rgba(56,211,159,0.05) 0%, transparent 38%);
+  filter:blur(6px);
+  animation:ambientDrift 18s ease-in-out infinite alternate;
+}
+@keyframes ambientDrift{
+  0%{transform:translate3d(0,0,0) scale(1)}
+  100%{transform:translate3d(0,-10px,0) scale(1.03)}
+}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:var(--surf)}
 ::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:4px}
@@ -946,6 +957,18 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 #tab-dashboard.active #grid .col:nth-child(1){animation-delay:.04s}
 #tab-dashboard.active #grid .col:nth-child(3){animation-delay:.09s}
 #tab-dashboard.active #bottom{animation-delay:.12s}
+
+/* Cinematic reveal utility for in-view sections */
+.reveal-up{
+  opacity:0;
+  transform:translateY(16px) scale(.995);
+  transition:opacity .52s ease, transform .52s ease;
+  will-change:transform,opacity;
+}
+.reveal-up.in{
+  opacity:1;
+  transform:translateY(0) scale(1);
+}
 
 /* LOADER */
 #loader{position:fixed;inset:0;background:var(--bg);z-index:999;
@@ -2808,6 +2831,37 @@ function applyAI(d){
 
 function refresh(){ S.cd = 15; fetchAI(); }
 
+function setupPremiumMotion(){
+  var selectors = [
+    '#tab-dashboard .panel',
+    '#tab-dashboard #bottom .bot-col',
+    '#tab-portfolio > div > div',
+    '#tab-evolution > div > div',
+    '#tab-logs > div > div',
+    '#tab-agents .agents-grid > *',
+    '#tab-settings .settings-section'
+  ];
+  var targets = [];
+  selectors.forEach(function(sel){
+    document.querySelectorAll(sel).forEach(function(el){ targets.push(el); });
+  });
+  targets.forEach(function(el, idx){
+    el.classList.add('reveal-up');
+    el.style.transitionDelay = Math.min(idx % 8, 7) * 0.05 + 's';
+  });
+
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if (entry.isIntersecting) entry.target.classList.add('in');
+      });
+    }, { threshold: 0.12 });
+    targets.forEach(function(el){ io.observe(el); });
+  } else {
+    targets.forEach(function(el){ el.classList.add('in'); });
+  }
+}
+
 // ── Tab Switching ──────────────────────────────────────────────────────────
 document.querySelectorAll('.tab-btn').forEach(function(btn){
   btn.addEventListener('click', function(){
@@ -2820,6 +2874,15 @@ document.querySelectorAll('.tab-btn').forEach(function(btn){
     if(tab === 'evolution') updateEvolutionTab();
     if(tab === 'logs') updateLogsTab();
     if(tab === 'agents') updateAgentsTab();
+
+    // Trigger cinematic reveal when switching tabs.
+    var panel = document.getElementById('tab-' + tab);
+    if (panel) {
+      panel.querySelectorAll('.reveal-up').forEach(function(el){
+        el.classList.remove('in');
+        requestAnimationFrame(function(){ el.classList.add('in'); });
+      });
+    }
   });
 });
 
@@ -3603,6 +3666,7 @@ function hideLoader(){
 
 function init(){
   try { buildSparkList(); } catch(e){ console.warn('buildSparkList',e); }
+  try { setupPremiumMotion(); } catch(e){ console.warn('setupPremiumMotion',e); }
 
   // Load advanced settings from localStorage
   try{ loadAdvancedSettings(); } catch(e){ console.warn('loadAdvancedSettings',e); }
