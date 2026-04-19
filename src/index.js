@@ -1969,18 +1969,16 @@ let priceChartData = [];
 
 async function fetchPriceData(symbol) {
   try {
-    // Fetch 1h candlestick data from Bitget public API (24 hours = 24 candles)
+    // Fetch from backend (proxied through Railway)
     const pair = symbol.replace('/', '').toUpperCase();
-    const url = 'https://api.bitget.com/v2/public/candles?symbol=' + pair + '&granularity=1h&limit=24';
-
-    const response = await fetch(url);
+    const response = await fetch('https://cloudflare-trader-production.up.railway.app/api/price-chart?symbol=' + pair);
     const data = await response.json();
 
-    if(data.code === '00000' && data.data) {
+    if(data.success && data.data) {
       priceChartData = data.data.map(candle => ({
-        time: new Date(parseInt(candle[0])),
-        open: parseFloat(candle[1]),
-        close: parseFloat(candle[4])
+        time: new Date(candle.time),
+        open: parseFloat(candle.open),
+        close: parseFloat(candle.close)
       }));
       renderPriceChart();
     }

@@ -364,3 +364,37 @@ def trigger_evolution():
     except Exception as e:
         logger.error(f"Evolution trigger failed: {e}")
         return {'error': str(e)}, 500
+
+# ===== PRICE CHART =====
+
+@api_bp.route('/price-chart', methods=['GET'])
+def get_price_chart():
+    """Get 24h price chart data for a symbol"""
+    try:
+        symbol = request.args.get('symbol', 'BTCUSDT')
+
+        import requests
+        url = f'https://api.bitget.com/v2/public/candles?symbol={symbol}&granularity=1h&limit=24'
+        resp = requests.get(url, timeout=5)
+        data = resp.json()
+
+        if data.get('code') == '00000' and data.get('data'):
+            candles = data['data']
+            return {
+                'success': True,
+                'symbol': symbol,
+                'data': [
+                    {
+                        'time': int(c[0]),
+                        'open': float(c[1]),
+                        'close': float(c[4])
+                    }
+                    for c in candles
+                ]
+            }, 200
+        else:
+            return {'error': 'Failed to fetch price data'}, 400
+
+    except Exception as e:
+        logger.error(f"Price chart error: {e}")
+        return {'error': str(e)}, 500
