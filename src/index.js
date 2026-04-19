@@ -1563,9 +1563,58 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
       </div>
     </div>
 
-    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center;">
-      <p style="font-size: 11px; color: var(--txt-dim);">For API Keys & Advanced Settings, see documentation</p>
-      <button class="btn" onclick="alert('Full Settings UI coming soon')" style="background: rgba(204,170,0,0.2); color: var(--gold); border: 1px solid var(--gold); padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-top: 8px;">⚙️ Advanced Settings</button>
+    <div class="settings-section" style="margin-top: 20px;">
+      <h3 style="color: var(--gold); margin-bottom: 12px; border-bottom: 2px solid var(--gold); padding-bottom: 8px;">🔐 API Keys & Advanced</h3>
+      <div class="settings-card" style="background: rgba(20,20,20,0.8); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+        <!-- Bitget API -->
+        <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <label style="display: block; font-size: 12px; font-weight: 600; color: var(--txt); margin-bottom: 6px;">Bitget API Key</label>
+          <input type="password" id="api-bitget-key" placeholder="Enter Bitget API Key" style="width: 100%; padding: 8px 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 4px; color: var(--txt); font-size: 12px; margin-bottom: 6px;">
+          <label style="display: block; font-size: 12px; font-weight: 600; color: var(--txt); margin-bottom: 6px;">Bitget Secret</label>
+          <input type="password" id="api-bitget-secret" placeholder="Enter Bitget Secret" style="width: 100%; padding: 8px 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 4px; color: var(--txt); font-size: 12px;">
+        </div>
+
+        <!-- DeepSeek/Claude API -->
+        <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <label style="display: block; font-size: 12px; font-weight: 600; color: var(--txt); margin-bottom: 6px;">DeepSeek API Key</label>
+          <input type="password" id="api-deepseek-key" placeholder="Enter DeepSeek API Key" style="width: 100%; padding: 8px 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 4px; color: var(--txt); font-size: 12px;">
+          <div style="font-size: 11px; color: var(--txt-dim); margin-top: 4px;">Used for AI agent analysis</div>
+        </div>
+
+        <!-- Trading Parameters -->
+        <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <label style="display: block; font-size: 12px; font-weight: 600; color: var(--txt); margin-bottom: 6px;">Max Trade Size ($)</label>
+          <input type="number" id="cfg-max-trade" value="1000" placeholder="1000" style="width: 100%; padding: 8px 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 4px; color: var(--txt); font-size: 12px; margin-bottom: 6px;">
+
+          <label style="display: block; font-size: 12px; font-weight: 600; color: var(--txt); margin-bottom: 6px;">Stop Loss %</label>
+          <input type="number" id="cfg-stop-loss" value="2" placeholder="2" step="0.1" style="width: 100%; padding: 8px 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 4px; color: var(--txt); font-size: 12px; margin-bottom: 6px;">
+
+          <label style="display: block; font-size: 12px; font-weight: 600; color: var(--txt); margin-bottom: 6px;">Take Profit %</label>
+          <input type="number" id="cfg-take-profit" value="5" placeholder="5" step="0.1" style="width: 100%; padding: 8px 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 4px; color: var(--txt); font-size: 12px;">
+        </div>
+
+        <!-- Confidence Threshold -->
+        <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <label style="display: block; font-size: 12px; font-weight: 600; color: var(--txt); margin-bottom: 6px;">Min Confidence Threshold (%)</label>
+          <input type="number" id="cfg-confidence" value="70" placeholder="70" min="0" max="100" style="width: 100%; padding: 8px 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 4px; color: var(--txt); font-size: 12px;">
+          <div style="font-size: 11px; color: var(--txt-dim); margin-top: 4px;">Only execute trades above this confidence</div>
+        </div>
+
+        <!-- Notification Settings -->
+        <div style="margin-bottom: 16px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; color: var(--txt); margin-bottom: 8px;">
+            <input type="checkbox" id="cfg-notify-trades" checked style="cursor: pointer; width: 14px; height: 14px;">
+            <span>Notify on executed trades</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; color: var(--txt);">
+            <input type="checkbox" id="cfg-notify-errors" checked style="cursor: pointer; width: 14px; height: 14px;">
+            <span>Notify on errors</span>
+          </label>
+        </div>
+
+        <!-- Save Button -->
+        <button onclick="saveAdvancedSettings()" style="width: 100%; background: linear-gradient(135deg,#00c853,#00e676); color: #000; border: none; border-radius: 6px; padding: 10px; cursor: pointer; font-weight: 700; font-size: 12px; transition: all 0.2s;">💾 Save Settings</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1850,6 +1899,71 @@ function handleLogout(){
 
 // Check auth on page load
 checkAuth();
+
+// ── Advanced Settings ──────────────────────────────────────────────────────
+function loadAdvancedSettings(){
+  try{
+    var bitgetKey = localStorage.getItem('api_bitget_key') || '';
+    var bitgetSecret = localStorage.getItem('api_bitget_secret') || '';
+    var deepseekKey = localStorage.getItem('api_deepseek_key') || '';
+    var maxTrade = localStorage.getItem('cfg_max_trade') || '1000';
+    var stopLoss = localStorage.getItem('cfg_stop_loss') || '2';
+    var takeProfit = localStorage.getItem('cfg_take_profit') || '5';
+    var confidence = localStorage.getItem('cfg_confidence') || '70';
+    var notifyTrades = localStorage.getItem('cfg_notify_trades') !== 'false';
+    var notifyErrors = localStorage.getItem('cfg_notify_errors') !== 'false';
+
+    if(document.getElementById('api-bitget-key')) document.getElementById('api-bitget-key').value = bitgetKey;
+    if(document.getElementById('api-bitget-secret')) document.getElementById('api-bitget-secret').value = bitgetSecret;
+    if(document.getElementById('api-deepseek-key')) document.getElementById('api-deepseek-key').value = deepseekKey;
+    if(document.getElementById('cfg-max-trade')) document.getElementById('cfg-max-trade').value = maxTrade;
+    if(document.getElementById('cfg-stop-loss')) document.getElementById('cfg-stop-loss').value = stopLoss;
+    if(document.getElementById('cfg-take-profit')) document.getElementById('cfg-take-profit').value = takeProfit;
+    if(document.getElementById('cfg-confidence')) document.getElementById('cfg-confidence').value = confidence;
+    if(document.getElementById('cfg-notify-trades')) document.getElementById('cfg-notify-trades').checked = notifyTrades;
+    if(document.getElementById('cfg-notify-errors')) document.getElementById('cfg-notify-errors').checked = notifyErrors;
+  }catch(e){
+    console.warn('Failed to load advanced settings:', e);
+  }
+}
+
+function saveAdvancedSettings(){
+  try{
+    var bitgetKey = document.getElementById('api-bitget-key').value || '';
+    var bitgetSecret = document.getElementById('api-bitget-secret').value || '';
+    var deepseekKey = document.getElementById('api-deepseek-key').value || '';
+    var maxTrade = document.getElementById('cfg-max-trade').value || '1000';
+    var stopLoss = document.getElementById('cfg-stop-loss').value || '2';
+    var takeProfit = document.getElementById('cfg-take-profit').value || '5';
+    var confidence = document.getElementById('cfg-confidence').value || '70';
+    var notifyTrades = document.getElementById('cfg-notify-trades').checked;
+    var notifyErrors = document.getElementById('cfg-notify-errors').checked;
+
+    localStorage.setItem('api_bitget_key', bitgetKey);
+    localStorage.setItem('api_bitget_secret', bitgetSecret);
+    localStorage.setItem('api_deepseek_key', deepseekKey);
+    localStorage.setItem('cfg_max_trade', maxTrade);
+    localStorage.setItem('cfg_stop_loss', stopLoss);
+    localStorage.setItem('cfg_take_profit', takeProfit);
+    localStorage.setItem('cfg_confidence', confidence);
+    localStorage.setItem('cfg_notify_trades', notifyTrades);
+    localStorage.setItem('cfg_notify_errors', notifyErrors);
+
+    var btn = event.target;
+    var origText = btn.textContent;
+    btn.textContent = '✓ Saved!';
+    btn.style.background = 'linear-gradient(135deg,#00c853,#00e676)';
+    setTimeout(function(){
+      btn.textContent = origText;
+      btn.style.background = 'linear-gradient(135deg,#00c853,#00e676)';
+    }, 2000);
+
+    console.log('✓ Advanced settings saved to localStorage');
+  }catch(e){
+    console.error('Failed to save settings:', e);
+    alert('Error saving settings: ' + e.message);
+  }
+}
 
 // ── Kill Switch (Bot Control) ──────────────────────────────────────────────
 function loadKillSwitchStatus(){
@@ -3100,6 +3214,9 @@ function hideLoader(){
 
 function init(){
   try { buildSparkList(); } catch(e){ console.warn('buildSparkList',e); }
+
+  // Load advanced settings from localStorage
+  try{ loadAdvancedSettings(); } catch(e){ console.warn('loadAdvancedSettings',e); }
 
   // Hide loader immediately — never block on network
   hideLoader();
