@@ -315,13 +315,16 @@ Current signal: ${sig} at ${conf}% confidence`;
         const body = await request.json();
         const { username, password } = body;
 
-        // Validate credentials
-        if (username === 'hongrui' && password === '123456thr@') {
+        // Validate credentials from environment variables
+        const validUser = env.LOGIN_USER || 'trader';
+        const validPass = env.LOGIN_PASS || 'change-me-in-production';
+
+        if (username === validUser && password === validPass) {
           const token = 'token_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
           return new Response(JSON.stringify({
             success: true,
             token: token,
-            user: 'hongrui'
+            user: validUser
           }), {
             headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
           });
