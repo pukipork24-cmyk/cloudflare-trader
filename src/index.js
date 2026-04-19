@@ -1455,12 +1455,63 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 
 <!-- ══ PORTFOLIO TAB ══ -->
 <div class="tab-panel" id="tab-portfolio">
-  <div class="pf-tab-wrap">
-    <div class="pf-hero-row">
-      <div class="pf-hero-card gold">
-        <div class="pf-hc-label">Total Balance</div>
-        <div class="pf-hc-val gold" id="pt-bal">$10,000.00</div>
-        <div class="pf-hc-sub">Available to trade</div>
+  <div class="pf-tab-wrap" style="padding:1rem;overflow-y:auto;height:100%">
+    <!-- KPIs Row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+      <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid #0f3460;border-radius:10px;padding:1rem">
+        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">Total Balance</div>
+        <div style="font-size:1.3rem;font-weight:800;color:#00d4ff;margin-bottom:.25rem" id="pt-balance">$10,000.00</div>
+        <div style="font-size:.65rem;color:var(--muted)">Available capital</div>
+      </div>
+      <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid #0f3460;border-radius:10px;padding:1rem">
+        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">Total P&L</div>
+        <div style="font-size:1.3rem;font-weight:800;color:#00e676;margin-bottom:.25rem" id="pt-pnl">+$0.00</div>
+        <div style="font-size:.65rem;color:var(--muted)">Realized gains/losses</div>
+      </div>
+      <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid #0f3460;border-radius:10px;padding:1rem">
+        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">Open Positions</div>
+        <div style="font-size:1.3rem;font-weight:800;color:#ffd600;margin-bottom:.25rem" id="pt-open">0</div>
+        <div style="font-size:.65rem;color:var(--muted)">Active trades</div>
+      </div>
+    </div>
+
+    <!-- Holdings Section -->
+    <div style="background:var(--card2);border:1px solid var(--bdr);border-radius:8px;padding:1rem;margin-bottom:1.5rem">
+      <div style="font-size:.8rem;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem">Holdings</div>
+      <div id="pt-holdings" style="display:flex;flex-direction:column;gap:.75rem">
+        <div style="display:grid;grid-template-columns:1fr auto auto;gap:1rem;align-items:center;padding:.75rem;background:rgba(255,255,255,0.02);border-radius:6px;border:1px solid rgba(255,255,255,0.05)">
+          <div style="font-size:.75rem;color:var(--muted)">No positions</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Portfolio Allocation -->
+    <div style="background:var(--card2);border:1px solid var(--bdr);border-radius:8px;padding:1rem;margin-bottom:1.5rem">
+      <div style="font-size:.8rem;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem">Allocation</div>
+      <div id="pt-allocation" style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem">
+        <div style="text-align:center;padding:.5rem;background:rgba(0,212,255,0.1);border-radius:6px;border:1px solid rgba(0,212,255,0.2)">
+          <div style="font-size:.65rem;color:var(--muted);margin-bottom:.25rem">Cash</div>
+          <div style="font-size:.9rem;font-weight:700;color:#00d4ff" id="pt-cash-pct">100%</div>
+        </div>
+        <div style="text-align:center;padding:.5rem;background:rgba(0,230,118,0.1);border-radius:6px;border:1px solid rgba(0,230,118,0.2)">
+          <div style="font-size:.65rem;color:var(--muted);margin-bottom:.25rem">Positions</div>
+          <div style="font-size:.9rem;font-weight:700;color:#00e676" id="pt-pos-pct">0%</div>
+        </div>
+        <div style="text-align:center;padding:.5rem;background:rgba(255,214,0,0.1);border-radius:6px;border:1px solid rgba(255,214,0,0.2)">
+          <div style="font-size:.65rem;color:var(--muted);margin-bottom:.25rem">Risk Exposure</div>
+          <div style="font-size:.9rem;font-weight:700;color:#ffd600" id="pt-risk">0%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Performance Metrics -->
+    <div style="background:var(--card2);border:1px solid var(--bdr);border-radius:8px;padding:1rem">
+      <div style="font-size:.8rem;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem">Performance</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;font-size:.75rem">
+        <div><div style="color:var(--muted);margin-bottom:.25rem">Win Rate</div><div style="font-weight:700;color:#00e676" id="pt-win-rate">0%</div></div>
+        <div><div style="color:var(--muted);margin-bottom:.25rem">Max Drawdown</div><div style="font-weight:700;color:#ff6b6b" id="pt-drawdown">0%</div></div>
+        <div><div style="color:var(--muted);margin-bottom:.25rem">Sharpe Ratio</div><div style="font-weight:700;color:#00d4ff" id="pt-sharpe">0.00</div></div>
+        <div><div style="color:var(--muted);margin-bottom:.25rem">Total Trades</div><div style="font-weight:700;color:#ffd600" id="pt-trades">0</div></div>
       </div>
     </div>
   </div>
@@ -1602,18 +1653,45 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
       stream.innerHTML = '<div style="padding: 40px 20px; text-align: center; color: var(--txt-dim);">No logs yet</div>';
       return;
     }
-    stream.innerHTML = logs.map(log => {
+    let html = '';
+    logs.forEach(function(log, idx) {
       const time = new Date(log.timestamp || Date.now()).toLocaleTimeString();
       const level = log.level || 'INFO';
       const msg = log.message || log.headline || 'System event';
       const color = level === 'ERROR' ? 'var(--red)' : level === 'SUCCESS' ? 'var(--green)' : level === 'WARN' ? 'var(--yellow)' : '#0099ff';
-      return '<div style="padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px; display: flex; gap: 12px; border-left: 3px solid ' + color + ';">' +
+      const id = 'log-' + idx;
+      const expanded = document.getElementById(id) && document.getElementById(id).dataset.expanded === 'true';
+      const dataStr = log.data ? JSON.stringify(log.data) : '';
+
+      html += '<div style="border-bottom: 1px solid rgba(255,255,255,0.05); border-left: 3px solid ' + color + ';">' +
+        '<div style="padding: 10px 16px; font-size: 12px; display: flex; gap: 12px; cursor: pointer; align-items: center; background: ' + (expanded ? 'rgba(255,255,255,0.02)' : 'transparent') + ';" onclick="toggleLog(\'' + id + '\');" data-expanded="' + expanded + '">' +
         '<span style="color: var(--txt-dim); min-width: 70px;">' + time + '</span>' +
         '<span style="color: ' + color + '; font-weight: 600; min-width: 60px;">[' + level + ']</span>' +
-        '<span style="color: var(--txt); flex: 1;">' + msg + '</span>' +
+        '<span style="color: var(--txt); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' + msg + '</span>' +
+        '<span style="color: var(--txt-dim); font-size: 11px;">▼</span>' +
         '</div>';
-    }).join('');
+
+      if(expanded || (document.getElementById(id) === null)) {
+        if(dataStr) {
+          html += '<div id="' + id + '-content" style="display: ' + (expanded ? 'block' : 'none') + '; padding: 0 16px 12px 16px; font-size: 11px; color: var(--txt-dim); background: rgba(0,0,0,0.3); font-family: monospace; max-height: 200px; overflow-y: auto; word-break: break-all;">' +
+            dataStr.substring(0, 500) + (dataStr.length > 500 ? '...' : '') + '</div>';
+        }
+      }
+      html += '</div>';
+    });
+    stream.innerHTML = html;
     if (logAutoScroll) stream.scrollTop = stream.scrollHeight;
+  }
+
+  function toggleLog(id) {
+    const header = document.querySelector('[data-expanded][onclick*="' + id + '"]');
+    const content = document.getElementById(id + '-content');
+    if(!content) return;
+
+    const expanded = header.dataset.expanded === 'true';
+    header.dataset.expanded = !expanded;
+    content.style.display = expanded ? 'none' : 'block';
+    header.style.background = expanded ? 'transparent' : 'rgba(255,255,255,0.02)';
   }
 
   function applyLogFilters() {
@@ -2039,10 +2117,13 @@ setInterval(updateBitgetBalance, 30000);
 setInterval(updateAIConfidence, 10000);
 // Update trade history every 15 seconds
 setInterval(updateTradeHistory, 15000);
+// Update portfolio every 30 seconds if visible
+setInterval(function(){ if(document.getElementById('tab-portfolio').classList.contains('active')) updatePortfolioTab(); }, 30000);
 // Update immediately on page load
 setTimeout(updateBitgetBalance, 500);
 setTimeout(updateAIConfidence, 500);
 setTimeout(updateTradeHistory, 500);
+setTimeout(updatePortfolioTab, 1000);
 
 var S = {
   candles:[],lastP:43250,prevP:43250,lastDisplayedP:43250,
@@ -2264,8 +2345,93 @@ function updateAgentsTab(){
 
 // ── Portfolio Tab ──────────────────────────────────────────────────────────
 function updatePortfolioTab(){
-  // Update balance from Bitget
-  updateBitgetBalance();
+  // Fetch balance
+  fetch('/api/bitget/balance')
+    .then(function(res){ return res.json(); })
+    .then(function(data){
+      if(data.success){
+        const balance = data.usdtBalance || 10000;
+        document.getElementById('pt-balance').textContent = '$' + balance.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      }
+    })
+    .catch(function(e){ console.warn('Portfolio balance fetch failed:', e); });
+
+  // Fetch trades for P&L and metrics
+  fetch('/api/trades?limit=100')
+    .then(function(res){ return res.json(); })
+    .then(function(data){
+      if(data.trades && Array.isArray(data.trades)){
+        const trades = data.trades;
+        const openTrades = trades.filter(function(t){ return t.status === 'OPEN'; });
+        const closedTrades = trades.filter(function(t){ return t.status === 'CLOSED'; });
+
+        // Total P&L
+        const totalPnL = closedTrades.reduce(function(sum, t){ return sum + (t.pnl || 0); }, 0);
+        const pnlEl = document.getElementById('pt-pnl');
+        if(pnlEl){
+          pnlEl.textContent = (totalPnL >= 0 ? '+' : '') + '$' + totalPnL.toFixed(2);
+          pnlEl.style.color = totalPnL >= 0 ? '#00e676' : '#ff6b6b';
+        }
+
+        // Open positions
+        document.getElementById('pt-open').textContent = openTrades.length.toString();
+
+        // Win rate
+        if(closedTrades.length > 0){
+          const wins = closedTrades.filter(function(t){ return t.pnl > 0; }).length;
+          const winRate = Math.round((wins / closedTrades.length) * 100);
+          document.getElementById('pt-win-rate').textContent = winRate + '%';
+        }
+
+        // Total trades
+        document.getElementById('pt-trades').textContent = trades.length.toString();
+
+        // Update holdings
+        updateHoldings(openTrades);
+
+        // Update allocation
+        updateAllocation(openTrades);
+      }
+    })
+    .catch(function(e){ console.warn('Portfolio trades fetch failed:', e); });
+}
+
+function updateHoldings(trades){
+  const holdingsEl = document.getElementById('pt-holdings');
+  if(!holdingsEl) return;
+
+  if(trades.length === 0){
+    holdingsEl.innerHTML = '<div style="display:grid;grid-template-columns:1fr auto auto;gap:1rem;align-items:center;padding:.75rem;background:rgba(255,255,255,0.02);border-radius:6px;border:1px solid rgba(255,255,255,0.05)"><div style="font-size:.75rem;color:var(--muted)">No positions</div></div>';
+    return;
+  }
+
+  const html = trades.map(function(t){
+    const pnl = t.pnl || 0;
+    const pnlPct = ((pnl / t.entry_price) * 100).toFixed(2);
+    return '<div style="display:grid;grid-template-columns:1fr auto auto;gap:1rem;align-items:center;padding:.75rem;background:rgba(255,255,255,0.02);border-radius:6px;border:1px solid rgba(255,255,255,0.05)">'
+      + '<div><div style="font-size:.75rem;font-weight:700;color:#fff">' + t.symbol + '</div>'
+      + '<div style="font-size:.65rem;color:var(--muted)">' + t.quantity.toFixed(4) + ' @ $' + t.entry_price.toFixed(2) + '</div></div>'
+      + '<div style="text-align:right"><div style="font-size:.75rem;font-weight:700;color:' + (pnl >= 0 ? '#00e676' : '#ff6b6b') + '">' + (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(2) + '</div>'
+      + '<div style="font-size:.65rem;color:' + (pnl >= 0 ? '#00e676' : '#ff6b6b') + '">' + (pnlPct >= 0 ? '+' : '') + pnlPct + '%</div></div></div>';
+  }).join('');
+
+  holdingsEl.innerHTML = html;
+}
+
+function updateAllocation(trades){
+  if(trades.length === 0){
+    document.getElementById('pt-cash-pct').textContent = '100%';
+    document.getElementById('pt-pos-pct').textContent = '0%';
+    return;
+  }
+
+  const totalPos = trades.reduce(function(sum, t){ return sum + (t.quantity * t.entry_price); }, 0);
+  const posPct = totalPos > 0 ? Math.round((totalPos / (totalPos + 10000)) * 100) : 0;
+  const cashPct = 100 - posPct;
+
+  document.getElementById('pt-cash-pct').textContent = cashPct + '%';
+  document.getElementById('pt-pos-pct').textContent = posPct + '%';
+  document.getElementById('pt-risk').textContent = (posPct * 0.02).toFixed(1) + '%';
 }
 
 // ── Logs Tab ───────────────────────────────────────────────────────────────
@@ -2449,7 +2615,7 @@ function applyInterval(){
 }
 
 // ── Evolution Control ────────────────────────────────────────────────────
-const RAILWAY_BASE='https://cloudflare-trader-production-xxxx.railway.app';
+const RAILWAY_BASE='https://cloudflare-trader-production.up.railway.app';
 
 function switchPanel(panel){
   const historyPanel = document.getElementById('panel-log');

@@ -1,91 +1,56 @@
 Read PROMPT.md file and build everything described in it. Start with the file structure first.
 ---
 
-## Environment Variables (.env.example)
+# AI Trading Bot System — Full Build Instructions
 
-```bash
-# ===== EXCHANGE =====
-BITGET_API_KEY=
-BITGET_SECRET_KEY=
-BITGET_PASSPHRASE=
-BITGET_SANDBOX=false  # set true for testing
+## Project Overview
+Build a complete, production-ready AI trading bot system with a web dashboard that can be deployed on Digital Ocean (2GB Droplet recommended, minimum 1GB). The system uses multiple specialized AI agents that collaborate to make cryptocurrency trading decisions on Bitget exchange.
 
-# ===== AI SERVICES =====
-DEEPSEEK_API_KEY=
-DEEPSEEK_MODEL=deepseek-chat
-ANTHROPIC_API_KEY=
+## Tech Stack
+- Backend AI agents: Python 3.11+
+- Web frontend + API: Node.js (Next.js 14 with App Router)
+- Database: PostgreSQL (via Docker)
+- Cache/Queue: Redis
+- Orchestration: Docker Compose
+- Authentication: NextAuth.js (single-user, email+password)
+- Reverse proxy: Nginx
 
-# ===== DATA SOURCES =====
-TELEGRAM_API_ID=
-TELEGRAM_API_HASH=
-TELEGRAM_PHONE=
-WHALE_ALERT_API_KEY=
-ETHERSCAN_API_KEY=
-BSCSCAN_API_KEY=
+## System Architecture
 
-# ===== DATABASE =====
-DATABASE_URL=postgresql://trader:CHANGE_ME@postgres:5432/tradingbot
-REDIS_URL=redis://redis:6379
+### 7 AI Agents
 
-# ===== AUTH (single user) =====
-ADMIN_EMAIL=admin@yourdomain.com
-ADMIN_PASSWORD_HASH=  # run: python scripts/generate_password_hash.py
+**AI1 — Technical Analysis Agent (Python)**
+- Runs every 5 minutes
+- Fetches OHLCV data from Bitget for: BTC/USDT, ETH/USDT, and top 20 coins by market cap
+- Calculates these indicators using pandas-ta:
+  - Trend: EMA(9,21,50,200), MACD, ADX
+  - Momentum: RSI(14), Stochastic RSI, CCI
+  - Volatility: Bollinger Bands, ATR, Keltner Channels
+  - Volume: OBV, VWAP, Volume Profile
+  - Patterns: Detects candlestick patterns, support/resistance levels
+  - Multi-timeframe: Analyze 1m, 5m, 15m, 1h, 4h simultaneously
+- Output: JSON report with signals, confidence scores, entry/exit zones per coin
+- Self-evolution: Every 24h, run walk-forward optimization on indicator parameters using last 30 days data, validate on most recent 7 days (never seen data). Save new params only if Sharpe ratio improves by >5%.
 
-# ===== NEXTAUTH =====
-NEXTAUTH_SECRET=  # run: openssl rand -base64 32
-NEXTAUTH_URL=https://yourdomain.com
+**AI2 — Telegram News Agent (Python)**
+- Runs every 5 minutes
+- Monitors these Telegram channels (use Telethon library):
+  - @WhaleCryptoAlert, @CryptoNewsFlash, @CoinDesk, @Cointelegraph, @binance_announcements, @bybit_announcements
+- Extracts: coin mentions, sentiment (positive/negative/neutral), urgency score 1-10
+- Filters: only news from last 10 minutes
+- Output: JSON report with news items, affected coins, sentiment scores
 
-# ===== TRADING DEFAULTS =====
-DEFAULT_MAX_CONCURRENT_TRADES=3
-DEFAULT_PER_TRADE_RISK_PCT=2.0
-DEFAULT_MAX_LEVERAGE=5
-DEFAULT_MAX_PAIRS=10
-CYCLE_INTERVAL_MINUTES=5
+**AI3 — Whale Wallet Tracker (Python)**
+- Runs every 5 minutes
+- Data sources:
+  - Whale Alert API (free tier: https://api.whale-alert.io/v1/transactions)
+  - Bitget large order detection via WebSocket (orders > $100k USD)
+  - On-chain data via Etherscan API for ETH wallets
+- Tracks: Large transfers >$500k, exchange inflows/outflows, wallet accumulation patterns
+- Output: JSON report with whale movements, direction (buy pressure/sell pressure), affected coins
 
-# ===== SAFETY =====
-TRADING_ENABLED=false  # must manually set to true after verification
-PAPER_TRADING_MODE=true  # set false for real trading
-```
-
----
-
-## Safety & Anti-Overfitting Rules (implement strictly)
-
-1. Walk-forward validation: training window 30d, test window 7d (strictly no leakage)
-2. Minimum trade sample: 20 trades before any evolution
-3. Improvement threshold: Sharpe ratio must improve by >5% (not just noise)
-4. Code changes: must pass safety_checker.py (scans for forbidden file imports, API key access, network calls to unknown hosts)
-5. Sandbox period: 24h paper trading before code structure changes approved
-6. Human-in-the-loop: code structure changes always require user approval click
-7. Parameter changes: auto-applied if backtest passes, but logged and reversible
-8. Circuit breakers: 3 consecutive losses >5% each → 6h pause; portfolio drawdown >15% → full halt
-9. Immutable files: bitget_client.py, ai5_risk.py execution logic, auth files — evolution system has no write access
-10. Git history: every change committed with descriptive message, easy rollback via dashboard
-
----
-
-## Deployment Script (scripts/deploy.sh)
-
-The script must:
-1. Detect Ubuntu 22.04, exit if wrong OS
-2. Install: docker, docker-compose, git, certbot
-3. Prompt interactively for all required env vars (with instructions for each)
-4. Generate secure NEXTAUTH_SECRET and prompt for password to hash
-5. Write .env file
-6. Run: docker-compose pull && docker-compose up -d
-7. Wait for PostgreSQL to be ready, then run init_db.sql
-8. Run Telegram first-time auth (interactive)
-9. Print: access URL, login credentials reminder, "set TRADING_ENABLED=true when ready"
-10. Print checklist of manual steps remaining (SSL cert, Telegram verification, API key testing)
-
----
-
-## Post-Build Deliverables Required
-
-After building all code, provide:
-1. Complete annotated file tree
-2. docs/API_KEYS_GUIDE.md — step by step for every external API
-3. docs/FIRST_RUN.md — exact commands to deploy on fresh Digital Ocean droplet
-4. docs/ARCHITECTURE.md — how agents communicate, data flow diagram in text
-5. Explanation of how to safely transition from paper trading to real trading
-6. Recommended Digital Ocean droplet size and estimated monthly cost breakdown
+**AI4 — Aggregator + DeepSeek Consultant (Python)**
+- Runs every 5 minutes, after AI1+2+3 complete
+- Collects reports from AI1, AI2, AI3
+- Builds a structured prompt summarizing all signals
+- Calls DeepSeek API (model: deepseek-chat) with this system prompt:

@@ -559,8 +559,8 @@ body::before{
   <div class="col" style="overflow-y:auto">
     <!-- Panel Tabs -->
     <div style="display:flex;border-bottom:1px solid var(--bdr);background:var(--surf);gap:0">
-      <button style="flex:1;padding:.5rem;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border-bottom:2px solid transparent;transition:all .2s;border-bottom-color:var(--cyan)" onclick="document.getElementById('signalPanel').style.display='flex';document.getElementById('evolutionPanel').style.display='none';this.style.borderBottomColor='var(--cyan)';this.nextElementSibling.style.borderBottomColor='transparent'">📊 Signals</button>
-      <button style="flex:1;padding:.5rem;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border-bottom:2px solid transparent;transition:all .2s" onclick="document.getElementById('evolutionPanel').style.display='flex';document.getElementById('signalPanel').style.display='none';this.style.borderBottomColor='var(--cyan)';this.previousElementSibling.style.borderBottomColor='transparent';fetchEvolutionStatus()">🧬 Evolution</button>
+      <button style="flex:1;padding:.5rem;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border-bottom:2px solid transparent;transition:all .2s;border-bottom-color:#00d4ff" onclick="document.getElementById('signalPanel').style.display='flex';document.getElementById('evolutionPanel').style.display='none';this.style.borderBottomColor='#00d4ff';this.nextElementSibling.style.borderBottomColor='transparent'">📊 Signals</button>
+      <button style="flex:1;padding:.5rem;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border-bottom:2px solid transparent;transition:all .2s" onclick="document.getElementById('evolutionPanel').style.display='flex';document.getElementById('signalPanel').style.display='none';this.style.borderBottomColor='#00d4ff';this.previousElementSibling.style.borderBottomColor='transparent';fetchEvolutionStatus()">🧬 Evolution</button>
     </div>
 
     <div class="panel">
@@ -1170,14 +1170,14 @@ function updateEvolutionUI(status){
   // Status indicator
   const statusEl=document.getElementById('evo-status');
   statusEl.textContent='Ready';
-  statusEl.style.color='var(--green)';
+  statusEl.style.color='#00e676';
 
   // Parameters
   const paramsEl=document.getElementById('evo-params');
   if(status.current_params && typeof status.current_params==='object'){
     const lines=Object.entries(status.current_params).map(([k,v])=>{
       const val=typeof v==='number'?v.toFixed(1):v;
-      return `<div>${k}: <span style="color:var(--gold2)">${val}</span></div>`;
+      return `<div>${k}: <span style="color:#ffd460">${val}</span></div>`;
     });
     paramsEl.innerHTML=lines.join('');
   }
