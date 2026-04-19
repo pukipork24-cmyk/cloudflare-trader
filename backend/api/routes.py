@@ -392,20 +392,36 @@ def trigger_evolution():
 
 @api_bp.route('/price-chart', methods=['GET'])
 def get_price_chart():
-    """Get 24h price chart data for a symbol"""
+    """Get OHLC chart data for a symbol (range: 24h, week, month, year)."""
     try:
         symbol = request.args.get('symbol', 'BTCUSDT')
+        range_key = (request.args.get('range') or '24h').lower().strip()
+        # Bitget v2 spot market candles: granularity + limit (approximate span)
+        presets = {
+            '24h': ('1h', 24),
+            'week': ('4h', 42),
+            'month': ('1day', 31),
+            'year': ('1day', 365),
+        }
+        if range_key not in presets:
+            range_key = '24h'
+        gran, lim = presets[range_key]
 
         import requests
-        url = f'{_BITGET_HTTP}/api/v2/spot/market/candles?symbol={symbol}&granularity=1h&limit=24'
-        resp = requests.get(url, timeout=5)
+        url = (
+            f'{_BITGET_HTTP}/api/v2/spot/market/candles'
+            f'?symbol={symbol}&granularity={gran}&limit={lim}'
+        )
+        resp = requests.get(url, timeout=10)
         data = resp.json()
 
         if data.get('code') == '00000' and data.get('data'):
-            candles = data['data']
+            candles = sorted(data['data'], key=lambda c: int(c[0]))
             return {
                 'success': True,
                 'symbol': symbol,
+                'range': range_key,
+                'granularity': gran,
                 'data': [
                     {
                         'time': int(c[0]),

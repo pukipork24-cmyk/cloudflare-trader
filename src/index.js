@@ -1416,7 +1416,15 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
     </div>
     <!-- Mini Price Chart -->
     <div style="flex:1;display:flex;flex-direction:column;padding:1rem;background:rgba(0,0,0,0.2);border-radius:8px;margin:0.75rem">
-      <div style="color:var(--txt-dim);font-size:0.85rem;margin-bottom:0.5rem">24h Price Chart</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem">
+        <div style="color:var(--txt-dim);font-size:0.85rem" id="priceChartTitle">Price chart · last 24 hours</div>
+        <div id="priceChartRangeBtns" style="display:flex;gap:4px;flex-wrap:wrap">
+          <button type="button" class="pc-range-btn" data-range="24h" style="background:var(--surf);border:1px solid var(--bdr2);color:var(--txt);padding:0.2rem 0.5rem;border-radius:6px;font-size:0.68rem;font-weight:700;cursor:pointer">24H</button>
+          <button type="button" class="pc-range-btn" data-range="week" style="background:var(--surf);border:1px solid var(--bdr2);color:var(--txt);padding:0.2rem 0.5rem;border-radius:6px;font-size:0.68rem;font-weight:700;cursor:pointer">Week</button>
+          <button type="button" class="pc-range-btn" data-range="month" style="background:var(--surf);border:1px solid var(--bdr2);color:var(--txt);padding:0.2rem 0.5rem;border-radius:6px;font-size:0.68rem;font-weight:700;cursor:pointer">Month</button>
+          <button type="button" class="pc-range-btn" data-range="year" style="background:var(--surf);border:1px solid var(--bdr2);color:var(--txt);padding:0.2rem 0.5rem;border-radius:6px;font-size:0.68rem;font-weight:700;cursor:pointer">Year</button>
+        </div>
+      </div>
       <div style="flex:1;position:relative;min-height:180px">
         <canvas id="priceChart"></canvas>
       </div>
@@ -1966,15 +1974,49 @@ checkAuth();
 // ── Price Chart ─────────────────────────────────────────────────────────────
 let priceChartInstance = null;
 let priceChartData = [];
+var priceChartRange = '24h';
 
-async function fetchPriceData(symbol) {
+var PRICE_CHART_RANGE_LABELS = {
+  '24h': 'Price chart · last 24 hours',
+  'week': 'Price chart · last 7 days',
+  'month': 'Price chart · last month',
+  'year': 'Price chart · last year'
+};
+
+function formatPriceChartAxisLabel(d, range) {
+  var mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  if (range === '24h') return d.getHours().toString().padStart(2,'0') + ':00';
+  if (range === 'week') return mo[d.getMonth()] + ' ' + d.getDate();
+  if (range === 'month') return mo[d.getMonth()] + ' ' + d.getDate();
+  return mo[d.getMonth()] + " '" + String(d.getFullYear()).slice(-2);
+}
+
+function syncPriceChartRangeButtons() {
+  document.querySelectorAll('.pc-range-btn').forEach(function(b){
+    var on = b.getAttribute('data-range') === priceChartRange;
+    b.style.borderColor = on ? 'var(--gold)' : 'var(--bdr2)';
+    b.style.color = on ? 'var(--gold)' : 'var(--txt)';
+    b.style.background = on ? 'rgba(240,165,0,0.12)' : 'var(--surf)';
+  });
+  var title = document.getElementById('priceChartTitle');
+  if (title) title.textContent = PRICE_CHART_RANGE_LABELS[priceChartRange] || PRICE_CHART_RANGE_LABELS['24h'];
+}
+
+async function fetchPriceData(symbol, range) {
   try {
-    // Fetch from backend (proxied through Railway)
+    if (range) priceChartRange = range;
+    try { localStorage.setItem('priceChartRange', priceChartRange); } catch(e) {}
+    syncPriceChartRangeButtons();
+
     const pair = symbol.replace('/', '').toUpperCase();
-    const response = await fetch('https://cloudflare-trader-production.up.railway.app/api/price-chart?symbol=' + pair);
+    const response = await fetch(
+      'https://cloudflare-trader-production.up.railway.app/api/price-chart?symbol=' + encodeURIComponent(pair)
+        + '&range=' + encodeURIComponent(priceChartRange)
+    );
     const data = await response.json();
 
     if(data.success && data.data) {
+      if (data.range) priceChartRange = data.range;
       priceChartData = data.data.map(candle => ({
         time: new Date(candle.time),
         open: parseFloat(candle.open),
@@ -1993,17 +2035,18 @@ function renderPriceChart() {
 
   if(priceChartInstance) priceChartInstance.destroy();
 
-  const labels = priceChartData.map(d => d.time.getHours() + ':00');
+  const labels = priceChartData.map(function(d){ return formatPriceChartAxisLabel(d.time, priceChartRange); });
   const prices = priceChartData.map(d => d.close);
   const minPrice = Math.min(...prices);
   const maxPrice = Math.max(...prices);
+  var dsLabel = (priceChartRange === '24h') ? 'Price (24h)' : (priceChartRange === 'week') ? 'Price (7d)' : (priceChartRange === 'month') ? 'Price (1M)' : 'Price (1Y)';
 
   priceChartInstance = new Chart(ctx, {
     type: 'line',
     data: {
       labels: labels,
       datasets: [{
-        label: 'Price (24h)',
+        label: dsLabel,
         data: prices,
         borderColor: 'var(--gold)',
         backgroundColor: 'rgba(204,0,0,0.1)',
@@ -2038,7 +2081,11 @@ function renderPriceChart() {
           grid: { color: 'rgba(255,255,255,0.05)' }
         },
         x: {
-          ticks: { color: 'var(--muted)', font: { size: 9 } },
+          ticks: {
+            color: 'var(--muted)',
+            font: { size: 9 },
+            maxTicksLimit: priceChartRange === 'year' ? 12 : priceChartRange === 'month' ? 10 : 8
+          },
           grid: { color: 'rgba(255,255,255,0.05)' }
         }
       }
@@ -2048,9 +2095,30 @@ function renderPriceChart() {
 
 // Fetch price data on page load and refresh every 5 minutes
 window.addEventListener('load', function() {
+  try {
+    var saved = localStorage.getItem('priceChartRange');
+    if (saved && PRICE_CHART_RANGE_LABELS[saved]) priceChartRange = saved;
+  } catch(e) {}
+  syncPriceChartRangeButtons();
+
+  var wrap = document.getElementById('priceChartRangeBtns');
+  if (wrap) {
+    wrap.addEventListener('click', function(ev){
+      var btn = ev.target.closest('.pc-range-btn');
+      if (!btn) return;
+      var r = btn.getAttribute('data-range');
+      if (!r || r === priceChartRange) return;
+      var sym = document.getElementById('currentSymbolLabel')?.textContent || 'BTC/USDT';
+      fetchPriceData(sym, r);
+    });
+  }
+
   const symbol = document.getElementById('currentSymbolLabel')?.textContent || 'BTC/USDT';
   fetchPriceData(symbol);
-  setInterval(() => fetchPriceData(symbol), 5 * 60 * 1000);
+  setInterval(function(){
+    var sym = document.getElementById('currentSymbolLabel')?.textContent || 'BTC/USDT';
+    fetchPriceData(sym);
+  }, 5 * 60 * 1000);
 });
 
 // ── Advanced Settings ──────────────────────────────────────────────────────
