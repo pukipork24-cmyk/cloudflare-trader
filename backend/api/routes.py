@@ -15,6 +15,24 @@ logger = logging.getLogger(__name__)
 
 api_bp = Blueprint('api', __name__)
 
+# ===== HEALTH CHECK =====
+
+@api_bp.route('/', methods=['GET'])
+def health_check():
+    """API health check"""
+    return {
+        'status': 'online',
+        'service': 'AI Trading Bot Backend',
+        'version': '2.0',
+        'endpoints': [
+            '/api/analyze - POST market analysis',
+            '/api/evolution/status - GET evolution status',
+            '/api/evolution/optimize - POST trigger evolution',
+            '/api/trades - GET trade history',
+            '/api/intelligence-logs - GET market intelligence logs'
+        ]
+    }, 200
+
 # ===== LIVE TRADING =====
 
 @api_bp.route('/analyze', methods=['POST'])
