@@ -3796,7 +3796,7 @@ function updateEvolutionTab(){
 
 function resetEvolutionParams(){
   if(!confirm('Reset parameters to defaults?')) return;
-  fetch('/api/evolution/optimize', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({reset:true}) })
+  fetch(RAILWAY_BASE + '/api/evolution/optimize', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({reset:true}) })
     .then(function(r){ return r.json(); })
     .then(function(data){
       if(data.success){

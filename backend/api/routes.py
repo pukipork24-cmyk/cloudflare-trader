@@ -371,9 +371,27 @@ def get_evolution_status():
 def trigger_evolution():
     """Manually trigger evolution cycle (admin only)"""
     from evolution.scheduler import evolution_scheduler
+    from evolution.optimizer import optimizer
     import asyncio
 
     try:
+        data = {}
+        try:
+            data = request.get_json(silent=True) or {}
+        except Exception:
+            data = {}
+
+        # Reset params to defaults (fast path)
+        if data.get('reset') is True:
+            if not optimizer:
+                return {'error': 'Optimizer not initialized'}, 500
+            optimizer.reset_to_defaults()
+            return {
+                'success': True,
+                'message': 'Parameters reset to defaults',
+                'status': evolution_scheduler.get_status()
+            }, 200
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         asyncio.run(evolution_scheduler.run_evolution_cycle())

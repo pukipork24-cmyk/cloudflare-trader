@@ -4,6 +4,7 @@ import logging
 from datetime import datetime, timedelta
 from pathlib import Path
 import numpy as np
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +30,9 @@ class ParameterOptimizer:
     """Optimize technical indicator parameters using backtesting results"""
 
     def __init__(self):
-        self.params_file = Path(__file__).parent / 'optimized_params.json'
-        self.history_file = Path(__file__).parent / 'evolution_history.json'
+        base_dir = Path(os.environ.get('EVOLUTION_STORAGE_DIR') or (Path(__file__).parent))
+        self.params_file = Path(os.environ.get('EVOLUTION_PARAMS_FILE') or (base_dir / 'optimized_params.json'))
+        self.history_file = Path(os.environ.get('EVOLUTION_HISTORY_FILE') or (base_dir / 'evolution_history.json'))
         self.current_params = self._load_params()
 
     def _load_params(self):
