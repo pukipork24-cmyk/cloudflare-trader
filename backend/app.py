@@ -61,6 +61,16 @@ def create_app(config_name='production'):
 
         logger.info(f"✓ App initialized ({config_name} mode)")
 
+    # Root route
+    @app.route('/')
+    def root():
+        return {
+            'status': 'online',
+            'service': 'AI Trading Bot Backend',
+            'version': '2.0',
+            'docs': 'https://cloudflare-trader-production.up.railway.app/api/'
+        }, 200
+
     # Error handlers
     @app.errorhandler(404)
     def not_found(e):
