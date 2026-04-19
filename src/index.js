@@ -359,7 +359,6 @@ Current signal: ${sig} at ${conf}% confidence`;
           const body = await request.json();
           await env.SETTINGS.put('bitget_api_key', body.bitget_api_key || '');
           await env.SETTINGS.put('bitget_api_secret', body.bitget_api_secret || '');
-          await env.SETTINGS.put('paper_trading', body.paper_trading ? 'true' : 'false');
           return new Response(JSON.stringify({ success: true }), {
             headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
           });
@@ -373,11 +372,9 @@ Current signal: ${sig} at ${conf}% confidence`;
         try {
           const key = await env.SETTINGS.get('bitget_api_key');
           const secret = await env.SETTINGS.get('bitget_api_secret');
-          const paperTrading = await env.SETTINGS.get('paper_trading');
           return new Response(JSON.stringify({
             bitget_api_key: key || '',
-            bitget_api_secret: secret || '',
-            paper_trading: paperTrading === 'true'
+            bitget_api_secret: secret || ''
           }), {
             headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
           });
@@ -1658,19 +1655,6 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
           <div style="font-size: 11px; color: var(--txt-dim); margin-top: 4px;">Only execute trades above this confidence</div>
         </div>
 
-        <!-- Trading Mode -->
-        <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; color: var(--txt); margin-bottom: 8px;">
-            <input type="checkbox" id="cfg-paper-trading" checked style="cursor: pointer; width: 14px; height: 14px;">
-            <span>🎓 Paper Trading Mode</span>
-          </label>
-          <div style="font-size: 11px; color: var(--txt-dim); margin-top: 4px;">When ON: simulate trades with virtual balance. When OFF: execute real trades on Bitget</div>
-
-          <label style="display: block; font-size: 12px; font-weight: 600; color: var(--txt); margin-top: 10px; margin-bottom: 6px;">Initial Capital ($)</label>
-          <input type="number" id="cfg-initial-capital" value="10000" placeholder="10000" min="100" style="width: 100%; padding: 8px 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 4px; color: var(--txt); font-size: 12px;">
-          <div style="font-size: 11px; color: var(--txt-dim); margin-top: 4px;">Starting balance for paper trading simulations</div>
-        </div>
-
         <!-- Notification Settings -->
         <div style="margin-bottom: 16px;">
           <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; color: var(--txt); margin-bottom: 8px;">
@@ -1981,8 +1965,6 @@ function loadAdvancedSettings(){
     var stopLoss = localStorage.getItem('cfg_stop_loss') || '2';
     var takeProfit = localStorage.getItem('cfg_take_profit') || '5';
     var confidence = localStorage.getItem('cfg_confidence') || '70';
-    var paperTrading = localStorage.getItem('cfg_paper_trading') !== 'false';
-    var initialCapital = localStorage.getItem('cfg_initial_capital') || '10000';
     var notifyTrades = localStorage.getItem('cfg_notify_trades') !== 'false';
     var notifyErrors = localStorage.getItem('cfg_notify_errors') !== 'false';
 
@@ -1993,8 +1975,6 @@ function loadAdvancedSettings(){
     if(document.getElementById('cfg-stop-loss')) document.getElementById('cfg-stop-loss').value = stopLoss;
     if(document.getElementById('cfg-take-profit')) document.getElementById('cfg-take-profit').value = takeProfit;
     if(document.getElementById('cfg-confidence')) document.getElementById('cfg-confidence').value = confidence;
-    if(document.getElementById('cfg-paper-trading')) document.getElementById('cfg-paper-trading').checked = paperTrading;
-    if(document.getElementById('cfg-initial-capital')) document.getElementById('cfg-initial-capital').value = initialCapital;
     if(document.getElementById('cfg-notify-trades')) document.getElementById('cfg-notify-trades').checked = notifyTrades;
     if(document.getElementById('cfg-notify-errors')) document.getElementById('cfg-notify-errors').checked = notifyErrors;
   }catch(e){
@@ -2011,8 +1991,6 @@ async function saveAdvancedSettings(){
     var stopLoss = document.getElementById('cfg-stop-loss').value || '2';
     var takeProfit = document.getElementById('cfg-take-profit').value || '5';
     var confidence = document.getElementById('cfg-confidence').value || '70';
-    var paperTrading = document.getElementById('cfg-paper-trading').checked;
-    var initialCapital = document.getElementById('cfg-initial-capital').value || '10000';
     var notifyTrades = document.getElementById('cfg-notify-trades').checked;
     var notifyErrors = document.getElementById('cfg-notify-errors').checked;
 
@@ -2024,8 +2002,6 @@ async function saveAdvancedSettings(){
     localStorage.setItem('cfg_stop_loss', stopLoss);
     localStorage.setItem('cfg_take_profit', takeProfit);
     localStorage.setItem('cfg_confidence', confidence);
-    localStorage.setItem('cfg_paper_trading', paperTrading);
-    localStorage.setItem('cfg_initial_capital', initialCapital);
     localStorage.setItem('cfg_notify_trades', notifyTrades);
     localStorage.setItem('cfg_notify_errors', notifyErrors);
 
@@ -2036,9 +2012,7 @@ async function saveAdvancedSettings(){
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           bitget_api_key: bitgetKey,
-          bitget_api_secret: bitgetSecret,
-          paper_trading: paperTrading,
-          initial_capital: parseInt(initialCapital)
+          bitget_api_secret: bitgetSecret
         })
       });
     }

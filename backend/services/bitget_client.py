@@ -11,23 +11,15 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 class BitgetClient:
-    def __init__(self, paper_trading=True):
+    def __init__(self):
         self.api_key = os.getenv('BITGET_API_KEY', '')
         self.api_secret = os.getenv('BITGET_API_SECRET', '')
         self.passphrase = os.getenv('BITGET_PASSPHRASE', '')
-        self.paper_trading = paper_trading
-
-        # Use testnet for paper trading, mainnet for real
-        if paper_trading:
-            self.base_url = 'https://api.bitget-testnet.com'  # Bitget testnet
-        else:
-            self.base_url = 'https://api.bitget.com'  # Bitget mainnet
-
+        self.base_url = 'https://api.bitget.com'
         self.available = bool(self.api_key and self.api_secret)
 
         if self.available:
-            mode = "PAPER (TESTNET)" if paper_trading else "LIVE (MAINNET)"
-            logger.info(f"✓ Bitget client initialized: {mode} mode")
+            logger.info("✓ Bitget client initialized (mainnet)")
         else:
             logger.warning("⚠️ Bitget client initialized (stub mode - missing API credentials)")
 
@@ -196,5 +188,4 @@ class BitgetClient:
             return {"success": False, "error": str(e)}
 
 # Global instance
-paper_mode = os.getenv('PAPER_TRADING_MODE', 'true').lower() == 'true'
-bitget_client = BitgetClient(paper_trading=paper_mode)
+bitget_client = BitgetClient()
