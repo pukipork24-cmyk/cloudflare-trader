@@ -55,6 +55,12 @@ export default {
   --gold-glow:rgba(110,194,255,0.28);
   --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;
   --radius-sm:8px;--radius-md:12px;--radius-lg:16px;
+  /* Motion tokens */
+  --ease-out:cubic-bezier(.22,1,.36,1);
+  --ease-soft:cubic-bezier(.2,.9,.2,1);
+  --dur-1:140ms;
+  --dur-2:220ms;
+  --dur-3:420ms;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;font-size:13px}
@@ -66,18 +72,65 @@ body{
   text-rendering:optimizeLegibility;
   overflow:hidden;
 }
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:0.001ms !important;animation-iteration-count:1 !important;transition-duration:0.001ms !important;scroll-behavior:auto !important}
+}
 a{color:inherit;text-decoration:none}
 #app{height:100vh;display:flex;flex-direction:column;min-height:0}
 #topbar{display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;
   background:linear-gradient(180deg,rgba(18,31,48,0.94),rgba(13,23,38,0.88));border-bottom:1px solid var(--bdr);backdrop-filter:blur(10px);min-height:54px}
+.topbar-shell{position:relative}
+.gradient-blur{position:fixed;z-index:4;inset:0 0 auto 0;height:12%;pointer-events:none}
+.gradient-blur > div,.gradient-blur::before,.gradient-blur::after{position:absolute;inset:0}
+.gradient-blur::before{content:"";z-index:1;backdrop-filter:blur(.5px);
+  -webkit-mask:linear-gradient(to top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 12.5%, rgba(0,0,0,1) 25%, rgba(0,0,0,0) 37.5%);
+  mask:linear-gradient(to top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 12.5%, rgba(0,0,0,1) 25%, rgba(0,0,0,0) 37.5%);
+}
+.gradient-blur > div:nth-of-type(1){z-index:2;backdrop-filter:blur(1px);
+  -webkit-mask:linear-gradient(to top, rgba(0,0,0,0) 12.5%, rgba(0,0,0,1) 25%, rgba(0,0,0,1) 37.5%, rgba(0,0,0,0) 50%);
+  mask:linear-gradient(to top, rgba(0,0,0,0) 12.5%, rgba(0,0,0,1) 25%, rgba(0,0,0,1) 37.5%, rgba(0,0,0,0) 50%);
+}
+.gradient-blur > div:nth-of-type(2){z-index:3;backdrop-filter:blur(2px);
+  -webkit-mask:linear-gradient(to top, rgba(0,0,0,0) 25%, rgba(0,0,0,1) 37.5%, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 62.5%);
+  mask:linear-gradient(to top, rgba(0,0,0,0) 25%, rgba(0,0,0,1) 37.5%, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 62.5%);
+}
+.gradient-blur > div:nth-of-type(3){z-index:4;backdrop-filter:blur(4px);
+  -webkit-mask:linear-gradient(to top, rgba(0,0,0,0) 37.5%, rgba(0,0,0,1) 50%, rgba(0,0,0,1) 62.5%, rgba(0,0,0,0) 75%);
+  mask:linear-gradient(to top, rgba(0,0,0,0) 37.5%, rgba(0,0,0,1) 50%, rgba(0,0,0,1) 62.5%, rgba(0,0,0,0) 75%);
+}
+.gradient-blur > div:nth-of-type(4){z-index:5;backdrop-filter:blur(8px);
+  -webkit-mask:linear-gradient(to top, rgba(0,0,0,0) 50%, rgba(0,0,0,1) 62.5%, rgba(0,0,0,1) 75%, rgba(0,0,0,0) 87.5%);
+  mask:linear-gradient(to top, rgba(0,0,0,0) 50%, rgba(0,0,0,1) 62.5%, rgba(0,0,0,1) 75%, rgba(0,0,0,0) 87.5%);
+}
+.gradient-blur > div:nth-of-type(5){z-index:6;backdrop-filter:blur(16px);
+  -webkit-mask:linear-gradient(to top, rgba(0,0,0,0) 62.5%, rgba(0,0,0,1) 75%, rgba(0,0,0,1) 87.5%, rgba(0,0,0,0) 100%);
+  mask:linear-gradient(to top, rgba(0,0,0,0) 62.5%, rgba(0,0,0,1) 75%, rgba(0,0,0,1) 87.5%, rgba(0,0,0,0) 100%);
+}
+.gradient-blur > div:nth-of-type(6){z-index:7;backdrop-filter:blur(32px);
+  -webkit-mask:linear-gradient(to top, rgba(0,0,0,0) 75%, rgba(0,0,0,1) 87.5%, rgba(0,0,0,1) 100%);
+  mask:linear-gradient(to top, rgba(0,0,0,0) 75%, rgba(0,0,0,1) 87.5%, rgba(0,0,0,1) 100%);
+}
+.gradient-blur::after{content:"";z-index:8;backdrop-filter:blur(64px);
+  -webkit-mask:linear-gradient(to top, rgba(0,0,0,0) 87.5%, rgba(0,0,0,1) 100%);
+  mask:linear-gradient(to top, rgba(0,0,0,0) 87.5%, rgba(0,0,0,1) 100%);
+}
+.border-gradient{position:relative}
+.border-gradient::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;
+  -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;
+  mask-composite:exclude;
+  background:linear-gradient(205deg, rgba(255,255,255,0) 0%, rgba(159,215,255,0.18) 40%, rgba(255,255,255,0) 100%);
+  opacity:.9;
+}
 .logo-wrap{display:flex;align-items:center;gap:.6rem}
 .logo-hex{width:28px;height:28px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:900;color:#000}
 .logo-text{font-weight:900;letter-spacing:.12em}
 .logo-text span{color:var(--gold)}
 .tb-right{display:flex;align-items:center;gap:.6rem;color:var(--muted)}
 .icon-btn{width:34px;height:34px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.18);
-  display:flex;align-items:center;justify-content:center;color:var(--txt);cursor:pointer;transition:transform .12s ease, border-color .12s ease}
-.icon-btn:hover{transform:translateY(-1px);border-color:rgba(159,215,255,.35)}
+  display:flex;align-items:center;justify-content:center;color:var(--txt);cursor:pointer;transition:transform var(--dur-1) var(--ease-out), border-color var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out)}
+.icon-btn:hover{transform:translateY(-1px);border-color:rgba(159,215,255,.35);box-shadow:0 10px 30px rgba(4,13,28,.35)}
 .btn{border:1px solid rgba(255,255,255,.10);background:rgba(0,0,0,.18);color:var(--txt);border-radius:12px;padding:10px 12px;cursor:pointer;font-weight:800;letter-spacing:.06em}
 .btn.primary{background:linear-gradient(180deg,rgba(110,194,255,.22),rgba(0,0,0,.10));border-color:rgba(110,194,255,.38);box-shadow:0 0 0 1px rgba(110,194,255,.12) inset}
 .btn:disabled{opacity:.5;cursor:not-allowed}
@@ -87,7 +140,15 @@ select.pill{appearance:none}
 .panel{background:rgba(18,31,48,0.92);border:1px solid var(--bdr);border-radius:var(--radius-md);overflow:hidden;min-height:0}
 .chart-wrap{flex:1;min-width:0;display:flex;flex-direction:column}
 #chart{flex:1;min-height:0}
+.chart-fade{
+  mask-image:linear-gradient(to bottom, transparent 0%, black 10%, black 92%, transparent 100%);
+  -webkit-mask-image:linear-gradient(to bottom, transparent 0%, black 10%, black 92%, transparent 100%);
+}
 .side{width:360px;flex-shrink:0;display:flex;flex-direction:column;min-height:0}
+.side{transition:width var(--dur-3) var(--ease-soft), opacity var(--dur-3) var(--ease-soft)}
+.focus-mode .side{width:0 !important;opacity:0;pointer-events:none;border:0}
+.focus-mode .layout{gap:0}
+.focus-mode .panel.side{display:none}
 .ph{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.06);background:linear-gradient(180deg,rgba(23,39,61,.65),rgba(18,31,48,.0))}
 .ph-title{font-weight:900;letter-spacing:.08em;font-size:12px;color:var(--txt)}
 .ph-sub{font-size:11px;color:var(--muted)}
@@ -95,8 +156,8 @@ select.pill{appearance:none}
 .kvs{display:grid;grid-template-columns:1fr;gap:10px}
 .kv{border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.18);border-radius:12px;padding:10px 12px}
 .kv .k{font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
-.kv .v{margin-top:6px;font-size:13px;color:var(--txt);line-height:1.35}
-.gauge{height:10px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden;margin-top:8px}
+.kv .v{margin-top:6px;font-size:13px;color:var(--txt);line-height:1.42;white-space:pre-wrap;word-break:break-word}
+.gauge{height:12px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden;margin-top:8px}
 .gauge > div{height:100%;width:0;background:linear-gradient(90deg,var(--red),var(--yellow),var(--green))}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .row > *{flex:0 0 auto}
@@ -116,8 +177,9 @@ select.pill{appearance:none}
 </style>
 </head>
 <body>
+<div class="gradient-blur"><div></div><div></div><div></div><div></div><div></div><div></div></div>
 <div id="app">
-  <div id="topbar">
+  <div id="topbar" class="border-gradient">
     <div class="logo-wrap">
       <div class="logo-hex">N</div>
       <div class="logo-text">PUKITRA<span>DEV2</span></div>
@@ -145,6 +207,7 @@ select.pill{appearance:none}
       <button id="btnAnalyze" class="btn primary">ANALYZE CHART</button>
     </div>
     <div class="tb-right">
+      <button class="icon-btn" id="btnFocus" title="Focus mode">⤢</button>
       <label class="small" style="display:flex;gap:8px;align-items:center;cursor:pointer">
         <input type="checkbox" id="logScale" style="transform:translateY(1px)"> Log
       </label>
@@ -153,7 +216,7 @@ select.pill{appearance:none}
   </div>
 
   <div class="layout">
-    <div class="panel chart-wrap">
+    <div class="panel chart-wrap border-gradient">
       <div class="ph">
         <div>
           <div class="ph-title">CHART</div>
@@ -161,7 +224,7 @@ select.pill{appearance:none}
         </div>
         <div class="small" id="status">Ready</div>
       </div>
-      <div id="chart"></div>
+      <div id="chart" class="chart-fade"></div>
       <div class="bottom">
         <div class="checks">
           <label><input type="checkbox" id="tgPrice" checked> Price line</label>
@@ -172,7 +235,7 @@ select.pill{appearance:none}
       </div>
     </div>
 
-    <div class="panel side">
+    <div class="panel side border-gradient">
       <div class="ph">
         <div>
           <div class="ph-title">ANALYSIS</div>
@@ -222,6 +285,7 @@ select.pill{appearance:none}
   var subtitle = document.getElementById('subtitle');
   var statusEl = document.getElementById('status');
   var logScaleEl = document.getElementById('logScale');
+  var btnFocus = document.getElementById('btnFocus');
 
   var tgPrice = document.getElementById('tgPrice');
   var tgMA = document.getElementById('tgMA');
@@ -579,6 +643,13 @@ select.pill{appearance:none}
   logScaleEl.addEventListener('change', function(){
     chart.applyOptions({ rightPriceScale: { mode: logScaleEl.checked ? 1 : 0 } });
   });
+
+  if(btnFocus){
+    btnFocus.addEventListener('click', function(){
+      document.body.classList.toggle('focus-mode');
+      setTimeout(function(){ resize(); }, 50);
+    });
+  }
 
   window.addEventListener('resize', function(){ resize(); });
 
@@ -1336,6 +1407,12 @@ Rules:
   --gold-glow:rgba(110,194,255,0.28);
   --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;
   --radius-sm:8px;--radius-md:12px;--radius-lg:16px;
+  /* Motion tokens */
+  --ease-out:cubic-bezier(.22,1,.36,1);
+  --ease-soft:cubic-bezier(.2,.9,.2,1);
+  --dur-1:140ms;
+  --dur-2:220ms;
+  --dur-3:420ms;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;font-size:13px}
@@ -1365,6 +1442,63 @@ body::after{
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:var(--surf)}
 ::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:4px}
+
+/* Reduced motion: keep content visible, disable ambient motion */
+@media (prefers-reduced-motion: reduce){
+  body::after{animation:none !important}
+  .status-dot{animation:none !important}
+  .ring{animation:none !important}
+  #tab-dashboard.active #grid .col,
+  #tab-dashboard.active #bottom{animation:none !important}
+  .reveal-up{opacity:1 !important;transform:none !important;transition:none !important}
+  .reveal-up.in{opacity:1 !important;transform:none !important}
+}
+
+/* Apple-like glass edge blur */
+.gradient-blur{position:fixed;z-index:2;inset:0 0 auto 0;height:12%;pointer-events:none}
+.gradient-blur > div,.gradient-blur::before,.gradient-blur::after{position:absolute;inset:0}
+.gradient-blur::before{content:"";z-index:1;backdrop-filter:blur(.5px);
+  -webkit-mask:linear-gradient(to top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 12.5%, rgba(0,0,0,1) 25%, rgba(0,0,0,0) 37.5%);
+  mask:linear-gradient(to top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 12.5%, rgba(0,0,0,1) 25%, rgba(0,0,0,0) 37.5%);
+}
+.gradient-blur > div:nth-of-type(1){z-index:2;backdrop-filter:blur(1px);
+  -webkit-mask:linear-gradient(to top, rgba(0,0,0,0) 12.5%, rgba(0,0,0,1) 25%, rgba(0,0,0,1) 37.5%, rgba(0,0,0,0) 50%);
+  mask:linear-gradient(to top, rgba(0,0,0,0) 12.5%, rgba(0,0,0,1) 25%, rgba(0,0,0,1) 37.5%, rgba(0,0,0,0) 50%);
+}
+.gradient-blur > div:nth-of-type(2){z-index:3;backdrop-filter:blur(2px);
+  -webkit-mask:linear-gradient(to top, rgba(0,0,0,0) 25%, rgba(0,0,0,1) 37.5%, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 62.5%);
+  mask:linear-gradient(to top, rgba(0,0,0,0) 25%, rgba(0,0,0,1) 37.5%, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 62.5%);
+}
+.gradient-blur > div:nth-of-type(3){z-index:4;backdrop-filter:blur(4px);
+  -webkit-mask:linear-gradient(to top, rgba(0,0,0,0) 37.5%, rgba(0,0,0,1) 50%, rgba(0,0,0,1) 62.5%, rgba(0,0,0,0) 75%);
+  mask:linear-gradient(to top, rgba(0,0,0,0) 37.5%, rgba(0,0,0,1) 50%, rgba(0,0,0,1) 62.5%, rgba(0,0,0,0) 75%);
+}
+.gradient-blur > div:nth-of-type(4){z-index:5;backdrop-filter:blur(8px);
+  -webkit-mask:linear-gradient(to top, rgba(0,0,0,0) 50%, rgba(0,0,0,1) 62.5%, rgba(0,0,0,1) 75%, rgba(0,0,0,0) 87.5%);
+  mask:linear-gradient(to top, rgba(0,0,0,0) 50%, rgba(0,0,0,1) 62.5%, rgba(0,0,0,1) 75%, rgba(0,0,0,0) 87.5%);
+}
+.gradient-blur > div:nth-of-type(5){z-index:6;backdrop-filter:blur(16px);
+  -webkit-mask:linear-gradient(to top, rgba(0,0,0,0) 62.5%, rgba(0,0,0,1) 75%, rgba(0,0,0,1) 87.5%, rgba(0,0,0,0) 100%);
+  mask:linear-gradient(to top, rgba(0,0,0,0) 62.5%, rgba(0,0,0,1) 75%, rgba(0,0,0,1) 87.5%, rgba(0,0,0,0) 100%);
+}
+.gradient-blur > div:nth-of-type(6){z-index:7;backdrop-filter:blur(32px);
+  -webkit-mask:linear-gradient(to top, rgba(0,0,0,0) 75%, rgba(0,0,0,1) 87.5%, rgba(0,0,0,1) 100%);
+  mask:linear-gradient(to top, rgba(0,0,0,0) 75%, rgba(0,0,0,1) 87.5%, rgba(0,0,0,1) 100%);
+}
+.gradient-blur::after{content:"";z-index:8;backdrop-filter:blur(64px);
+  -webkit-mask:linear-gradient(to top, rgba(0,0,0,0) 87.5%, rgba(0,0,0,1) 100%);
+  mask:linear-gradient(to top, rgba(0,0,0,0) 87.5%, rgba(0,0,0,1) 100%);
+}
+
+.border-gradient{position:relative}
+.border-gradient::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;
+  -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;
+  mask-composite:exclude;
+  background:linear-gradient(205deg, rgba(255,255,255,0) 0%, rgba(159,215,255,0.16) 40%, rgba(255,255,255,0) 100%);
+  opacity:.9;
+}
 
 /* Loader auto-hides after 1.5s even if JS fails */
 @keyframes autoHide{0%,80%{opacity:1}100%{opacity:0;pointer-events:none}}
@@ -1416,7 +1550,8 @@ body::after{
 #clock{font-size:.75rem;color:var(--muted);font-variant-numeric:tabular-nums}
 .icon-btn{width:30px;height:30px;border-radius:8px;border:1px solid var(--bdr);
   background:var(--card);color:var(--muted);cursor:pointer;
-  display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:all .2s}
+  display:flex;align-items:center;justify-content:center;font-size:.85rem;
+  transition:transform var(--dur-1) var(--ease-out), border-color var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out)}
 .icon-btn:hover{border-color:var(--gold);color:var(--gold);box-shadow:0 4px 14px rgba(110,194,255,0.16)}
 
 /* STRIP */
@@ -1499,6 +1634,10 @@ body::after{
 .tf:hover:not(.on){color:var(--gold);border-color:var(--bdr2)}
 .chart-sep{width:1px;background:var(--bdr);margin:0 .2rem;height:16px}
 .chart-body{flex:1;position:relative;overflow:hidden;min-height:200px}
+.chart-fade{
+  mask-image:linear-gradient(to bottom, transparent 0%, black 10%, black 92%, transparent 100%);
+  -webkit-mask-image:linear-gradient(to bottom, transparent 0%, black 10%, black 92%, transparent 100%);
+}
 #mainChart{position:absolute;inset:0;width:100%;height:100%}
 
 /* RIGHT */
@@ -2017,6 +2156,8 @@ body::after{
 </head>
 <body>
 
+<div class="gradient-blur"><div></div><div></div><div></div><div></div><div></div><div></div></div>
+
 <div id="loader"><div class="loader-hex"></div><div class="loader-text">Loading pukitradev2</div></div>
 
 <!-- ══ LOGIN PAGE ══ -->
@@ -2045,7 +2186,7 @@ body::after{
 </div>
 
 <div id="app">
-<div id="topbar">
+<div id="topbar" class="border-gradient">
   <div class="logo-wrap">
     <div class="logo-hex">N</div>
     <div class="logo-text">PUKITRA<span>DEV2</span></div>
@@ -2186,7 +2327,7 @@ body::after{
         </div>
       </div>
       <div style="flex:1;position:relative;min-height:180px">
-        <canvas id="priceChart"></canvas>
+        <canvas id="priceChart" class="chart-fade"></canvas>
       </div>
     </div>
   </div>
@@ -3494,6 +3635,8 @@ function applyAI(d){
 function refresh(){ S.cd = 15; fetchAI(); }
 
 function setupPremiumMotion(){
+  var reduce = false;
+  try { reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e) {}
   var selectors = [
     '#tab-dashboard .panel',
     '#tab-dashboard #bottom .bot-col',
@@ -3509,8 +3652,11 @@ function setupPremiumMotion(){
   });
   targets.forEach(function(el, idx){
     el.classList.add('reveal-up');
-    el.style.transitionDelay = Math.min(idx % 8, 7) * 0.05 + 's';
+    el.style.transitionDelay = reduce ? '0s' : (Math.min(idx % 8, 7) * 0.05 + 's');
+    if (reduce) el.classList.add('in');
   });
+
+  if (reduce) return;
 
   if ('IntersectionObserver' in window) {
     var io = new IntersectionObserver(function(entries){
