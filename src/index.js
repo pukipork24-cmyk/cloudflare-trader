@@ -352,6 +352,41 @@ Current signal: ${sig} at ${conf}% confidence`;
       });
     }
 
+    // ── /api/settings — Store/retrieve settings in KV ────────────────────────
+    if (url.pathname === '/api/settings') {
+      if (request.method === 'POST') {
+        try {
+          const body = await request.json();
+          await env.SETTINGS.put('bitget_api_key', body.bitget_api_key || '');
+          await env.SETTINGS.put('bitget_api_secret', body.bitget_api_secret || '');
+          return new Response(JSON.stringify({ success: true }), {
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+          });
+        } catch(e) {
+          return new Response(JSON.stringify({ error: e.message }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+          });
+        }
+      } else if (request.method === 'GET') {
+        try {
+          const key = await env.SETTINGS.get('bitget_api_key');
+          const secret = await env.SETTINGS.get('bitget_api_secret');
+          return new Response(JSON.stringify({
+            bitget_api_key: key || '',
+            bitget_api_secret: secret || ''
+          }), {
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+          });
+        } catch(e) {
+          return new Response(JSON.stringify({ error: e.message }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+          });
+        }
+      }
+    }
+
     // ── /api/bitget/balance — Get Bitget account balance ───────────────────
     if (url.pathname === '/api/bitget/balance') {
       const balance = await getBalance(env);
@@ -1947,7 +1982,7 @@ function loadAdvancedSettings(){
   }
 }
 
-function saveAdvancedSettings(){
+async function saveAdvancedSettings(){
   try{
     var bitgetKey = document.getElementById('api-bitget-key').value || '';
     var bitgetSecret = document.getElementById('api-bitget-secret').value || '';
@@ -1959,6 +1994,7 @@ function saveAdvancedSettings(){
     var notifyTrades = document.getElementById('cfg-notify-trades').checked;
     var notifyErrors = document.getElementById('cfg-notify-errors').checked;
 
+    // Save to localStorage
     localStorage.setItem('api_bitget_key', bitgetKey);
     localStorage.setItem('api_bitget_secret', bitgetSecret);
     localStorage.setItem('api_deepseek_key', deepseekKey);
@@ -1969,6 +2005,18 @@ function saveAdvancedSettings(){
     localStorage.setItem('cfg_notify_trades', notifyTrades);
     localStorage.setItem('cfg_notify_errors', notifyErrors);
 
+    // Save to KV (Cloudflare Workers)
+    if(bitgetKey && bitgetSecret) {
+      await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bitget_api_key: bitgetKey,
+          bitget_api_secret: bitgetSecret
+        })
+      });
+    }
+
     var btn = event.target;
     var origText = btn.textContent;
     btn.textContent = '✓ Saved!';
@@ -1978,7 +2026,7 @@ function saveAdvancedSettings(){
       btn.style.background = 'linear-gradient(135deg,#00c853,#00e676)';
     }, 2000);
 
-    console.log('✓ Advanced settings saved to localStorage');
+    console.log('✓ Advanced settings saved');
   }catch(e){
     console.error('Failed to save settings:', e);
     alert('Error saving settings: ' + e.message);
