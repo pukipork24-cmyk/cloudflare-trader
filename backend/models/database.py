@@ -24,9 +24,9 @@ class TradeDecision(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     symbol = db.Column(db.String(20), nullable=False)
-    recommendation = db.Column(db.Enum('BUY', 'SELL', 'HOLD'), nullable=False)
+    recommendation = db.Column(db.Enum('BUY', 'SELL', 'HOLD', name='recommendation_enum'), nullable=False)
     confidence = db.Column(db.Integer, nullable=False)  # 0-100
-    risk_level = db.Column(db.Enum('LOW', 'MEDIUM', 'HIGH', 'EXTREME'), nullable=False)
+    risk_level = db.Column(db.Enum('LOW', 'MEDIUM', 'HIGH', 'EXTREME', name='risk_level_enum'), nullable=False)
 
     # Individual agent votes
     technical_rec = db.Column(db.String(50))
@@ -47,7 +47,7 @@ class TradeDecision(db.Model):
     conflicts = db.Column(db.JSON)  # []
 
     # CIO approval
-    cio_decision = db.Column(db.Enum('EXECUTE', 'SKIP', 'MODIFY'), nullable=False)
+    cio_decision = db.Column(db.Enum('EXECUTE', 'SKIP', 'MODIFY', name='cio_decision_enum'), nullable=False)
     cio_reasoning = db.Column(db.Text)
 
     # Trade parameters
@@ -74,8 +74,8 @@ class Trade(db.Model):
 
     # Position details
     coin = db.Column(db.String(20), nullable=False)
-    direction = db.Column(db.Enum('BUY', 'SELL', 'SHORT'), nullable=False)
-    trade_type = db.Column(db.Enum('SPOT', 'FUTURES'), default='SPOT')
+    direction = db.Column(db.Enum('BUY', 'SELL', 'SHORT', name='direction_enum'), nullable=False)
+    trade_type = db.Column(db.Enum('SPOT', 'FUTURES', name='trade_type_enum'), default='SPOT')
     leverage = db.Column(db.Numeric(5, 2), default=1.00)
     quantity = db.Column(db.Numeric(20, 8), nullable=False)
 
@@ -91,9 +91,9 @@ class Trade(db.Model):
     take_profit_3 = db.Column(db.Numeric(20, 8))
 
     # Exit tracking
-    status = db.Column(db.Enum('OPEN', 'CLOSED', 'STOPPED', 'PARTIAL', 'LIQUIDATED'), default='OPEN')
+    status = db.Column(db.Enum('OPEN', 'CLOSED', 'STOPPED', 'PARTIAL', 'LIQUIDATED', name='status_enum'), default='OPEN')
     close_price = db.Column(db.Numeric(20, 8))
-    close_reason = db.Column(db.Enum('TP1', 'TP2', 'TP3', 'SL', 'TIMEOUT', 'MANUAL', 'LIQUIDATED'))
+    close_reason = db.Column(db.Enum('TP1', 'TP2', 'TP3', 'SL', 'TIMEOUT', 'MANUAL', 'LIQUIDATED', name='close_reason_enum'))
 
     # Partial exits
     tp1_filled_qty = db.Column(db.Numeric(20, 8))
@@ -121,7 +121,7 @@ class Trade(db.Model):
 
     # AI Analysis (explainability)
     agent_confidence = db.Column(db.Integer)
-    risk_level = db.Column(db.Enum('LOW', 'MEDIUM', 'HIGH', 'EXTREME'))
+    risk_level = db.Column(db.Enum('LOW', 'MEDIUM', 'HIGH', 'EXTREME', name='trade_risk_level_enum'))
     cio_decision = db.Column(db.String(50))
 
     # Full audit trail

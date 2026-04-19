@@ -173,4 +173,8 @@ class ParameterOptimizer:
         self._save_params(self.current_params)
         logger.info("Parameters reset to defaults")
 
-optimizer = ParameterOptimizer()
+try:
+    optimizer = ParameterOptimizer()
+except Exception as e:
+    logger.error(f"Failed to initialize optimizer: {e}")
+    optimizer = None

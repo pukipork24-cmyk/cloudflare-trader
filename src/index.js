@@ -1296,6 +1296,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 <div id="tabbar">
   <button class="tab-btn active" data-tab="dashboard"><span class="t-icon">&#9636;</span> Dashboard</button>
   <button class="tab-btn" data-tab="portfolio"><span class="t-icon">&#128188;</span> Portfolio</button>
+  <button class="tab-btn" data-tab="evolution"><span class="t-icon">🧬</span> Evolution</button>
   <button class="tab-btn" data-tab="logs"><span class="t-icon">&#128202;</span> Logs</button>
   <button class="tab-btn" data-tab="agents"><span class="t-icon">&#129302;</span> Agents</button>
   <button class="tab-btn" data-tab="settings"><span class="t-icon">&#9881;</span> Settings</button>
@@ -1411,11 +1412,6 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
       </div>
       <button id="btnAnalyze" onclick="runClaudeAnalysis()" style="width:100%;background:var(--gold);color:#000;border:none;padding:10px 16px;border-radius:8px;cursor:pointer;font-weight:800;font-size:13px;margin-top:12px;transition:all 0.2s;box-shadow:0 4px 15px rgba(240,165,0,0.3)">▶ RUN ANALYSIS</button>
     </div>
-    <!-- Panel Tabs -->
-    <div style="display:flex;border-bottom:1px solid var(--bdr);background:var(--surf);gap:0;border-radius:0">
-      <button id="tab-history" style="flex:1;padding:.5rem;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border-bottom:2px solid #00d4ff;transition:all .2s" onclick="switchPanel('history')">📊 History</button>
-      <button id="tab-evolution" style="flex:1;padding:.5rem;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border-bottom:2px solid transparent;transition:all .2s" onclick="switchPanel('evolution');fetchEvolutionStatus()">🧬 Evolution</button>
-    </div>
 
     <div class="row-resizer"></div>
 
@@ -1424,28 +1420,6 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
       <div class="ph"><div class="ph-title">Trade History</div></div>
       <div class="log-wrap" id="logWrap">
         <div style="color:var(--muted);font-size:.7rem;text-align:center;padding:.5rem">Awaiting trades...</div>
-      </div>
-    </div>
-
-    <!-- Evolution Control Panel (HIDDEN BY DEFAULT) -->
-    <div class="panel" id="panel-evolution" style="flex:1;overflow-y:auto;display:none;flex-direction:column;min-height:60px">
-      <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid #0f3460;border-radius:10px;padding:1rem;margin-bottom:.75rem">
-        <div style="font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">Latest Evolution</div>
-        <div style="font-size:.9rem;font-weight:700;color:#00d4ff;margin-bottom:.35rem" id="evo-timestamp">Never</div>
-        <div style="font-size:.7rem;color:var(--muted)">Status: <span id="evo-status" style="color:#ffd600">Idle</span></div>
-        <div style="font-size:.7rem;color:var(--muted);margin-top:.25rem">Total Cycles: <span id="evo-count" style="color:#fff;font-weight:600">0</span></div>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1rem">
-        <button style="background:linear-gradient(135deg,#00c853,#00e676);color:#000;border:none;border-radius:10px;padding:.7rem;cursor:pointer;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.1em;transition:transform .1s,box-shadow .2s" onclick="approveEvolution()">✓ Approve</button>
-        <button style="background:linear-gradient(135deg,#c62828,#ff2d55);color:#fff;border:none;border-radius:10px;padding:.7rem;cursor:pointer;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.1em;transition:transform .1s,box-shadow .2s" onclick="declineEvolution()">✕ Decline</button>
-      </div>
-
-      <div style="background:var(--card2);border:1px solid var(--bdr);border-radius:8px;padding:.75rem;margin-bottom:1rem;font-size:.7rem">
-        <div style="color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem;font-weight:700">Current Parameters</div>
-        <div id="evo-params" style="font-family:monospace;color:#ffd460;line-height:1.6;max-height:150px;overflow-y:auto">
-          <div style="color:var(--muted)">Loading...</div>
-        </div>
       </div>
     </div>
   </div>
@@ -1516,6 +1490,49 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
     </div>
   </div>
 </div>
+
+<!-- ══ EVOLUTION TAB ══ -->
+<div class="tab-panel" id="tab-evolution">
+  <div style="padding:1.5rem;overflow-y:auto;height:100%">
+    <!-- Status Card -->
+    <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid #0f3460;border-radius:10px;padding:1.5rem;margin-bottom:1.5rem">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+        <div>
+          <div style="font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">Latest Evolution</div>
+          <div style="font-size:1.1rem;font-weight:700;color:#00d4ff" id="evo-timestamp">Never</div>
+        </div>
+        <div>
+          <div style="font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">Total Cycles</div>
+          <div style="font-size:1.1rem;font-weight:700;color:#ffd600" id="evo-count">0</div>
+        </div>
+      </div>
+      <div style="font-size:.75rem;color:var(--muted)">Status: <span id="evo-status" style="color:#00e676;font-weight:700">Ready</span></div>
+    </div>
+
+    <!-- Control Buttons -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+      <button onclick="approveEvolution()" style="background:linear-gradient(135deg,#00c853,#00e676);color:#000;border:none;border-radius:10px;padding:1rem;cursor:pointer;font-weight:800;font-size:.9rem;text-transform:uppercase;letter-spacing:.1em;transition:all 0.2s;box-shadow:0 4px 15px rgba(0,230,118,0.2)">▶ Execute Evolution</button>
+      <button onclick="resetEvolutionParams()" style="background:linear-gradient(135deg,#ff6b6b,#ff2d55);color:#fff;border:none;border-radius:10px;padding:1rem;cursor:pointer;font-weight:800;font-size:.9rem;text-transform:uppercase;letter-spacing:.1em;transition:all 0.2s;box-shadow:0 4px 15px rgba(255,45,85,0.2)">⟲ Reset Params</button>
+    </div>
+
+    <!-- Current Parameters -->
+    <div style="background:var(--card2);border:1px solid var(--bdr);border-radius:8px;padding:1.5rem;margin-bottom:1.5rem">
+      <div style="font-size:.8rem;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem">Current Parameters</div>
+      <div id="evo-params" style="font-family:monospace;color:#ffd460;line-height:1.8;font-size:.75rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div style="color:var(--muted)">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Evolution History -->
+    <div style="background:var(--card2);border:1px solid var(--bdr);border-radius:8px;padding:1.5rem">
+      <div style="font-size:.8rem;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem">Evolution History</div>
+      <div id="evo-history" style="display:flex;flex-direction:column;gap:.75rem;max-height:300px;overflow-y:auto">
+        <div style="font-size:.75rem;color:var(--muted);text-align:center;padding:1rem">No evolution history yet</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ SETTINGS TAB ══ -->
 <div class="tab-panel" id="tab-settings">
   <!-- Account & System -->
@@ -2257,6 +2274,7 @@ var SPARK_SYMS = ['ETH','BNB','SOL','DOGE','ADA','AVAX'];
 var sparkData = {};
 SPARK_SYMS.forEach(function(s){ sparkData[s] = Array(20).fill(COINS[s].p); });
 var chartType = 'Candle';
+var activeSparkSymbol = 'ETH';
 
 // Clock
 setInterval(function(){
@@ -2277,13 +2295,32 @@ setInterval(function(){
 function buildSparkList(){
   var html = '';
   SPARK_SYMS.forEach(function(sym){
-    html += '<div class="spark-item">'
-      + '<span class="spark-sym">' + sym + '</span>'
+    var isActive = sym === activeSparkSymbol;
+    var bgColor = isActive ? 'rgba(0,212,255,0.15)' : 'var(--card2)';
+    var borderColor = isActive ? '1px solid rgba(0,212,255,0.5)' : '1px solid transparent';
+    html += '<div class="spark-item" id="spark-' + sym + '" data-sym="' + sym + '" style="cursor:pointer;background:' + bgColor + ';border:' + borderColor + ';transition:all 0.2s">'
+      + '<span class="spark-sym" style="color:' + (isActive ? '#00d4ff' : 'var(--muted)') + ';font-weight:' + (isActive ? '800' : '700') + '">' + sym + '</span>'
       + '<canvas class="spark-canvas" id="spk-' + sym + '" width="60" height="22"></canvas>'
-      + '<span class="spark-price" id="spkp-' + sym + '">$' + COINS[sym].p.toFixed(COINS[sym].d) + '</span>'
+      + '<span class="spark-price" id="spkp-' + sym + '" style="color:' + (isActive ? '#00d4ff' : 'var(--muted)') + '">$' + COINS[sym].p.toFixed(COINS[sym].d) + '</span>'
       + '</div>';
   });
   document.getElementById('sparkList').innerHTML = html;
+
+  // Add click listeners
+  document.querySelectorAll('.spark-item').forEach(function(el){
+    el.addEventListener('click', function(){
+      switchSparkSymbol(this.dataset.sym);
+    });
+  });
+}
+
+function switchSparkSymbol(sym){
+  activeSparkSymbol = sym;
+  currentTradingSymbol = sym + 'USDT';
+  buildSparkList();
+  renderSparks();
+  console.log('🔄 Switched trading target to ' + sym);
+  setTimeout(function(){ fetchAI(); }, 300);
 }
 
 function renderSparks(){
@@ -2447,6 +2484,7 @@ document.querySelectorAll('.tab-btn').forEach(function(btn){
     btn.classList.add('active');
     document.getElementById('tab-' + tab).classList.add('active');
     if(tab === 'portfolio') updatePortfolioTab();
+    if(tab === 'evolution') updateEvolutionTab();
     if(tab === 'logs') updateLogsTab();
     if(tab === 'agents') updateAgentsTab();
   });
@@ -2546,6 +2584,26 @@ function updateAllocation(trades){
   document.getElementById('pt-cash-pct').textContent = cashPct + '%';
   document.getElementById('pt-pos-pct').textContent = posPct + '%';
   document.getElementById('pt-risk').textContent = (posPct * 0.02).toFixed(1) + '%';
+}
+
+// ── Evolution Tab ──────────────────────────────────────────────────────────
+function updateEvolutionTab(){
+  fetchEvolutionStatus();
+}
+
+function resetEvolutionParams(){
+  if(!confirm('Reset parameters to defaults?')) return;
+  fetch('/api/evolution/optimize', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({reset:true}) })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if(data.success){
+        alert('✓ Parameters reset to defaults');
+        setTimeout(function(){ fetchEvolutionStatus(); }, 500);
+      }else{
+        alert('Error: ' + data.error);
+      }
+    })
+    .catch(function(e){ alert('Failed to reset: ' + e.message); });
 }
 
 // ── Logs Tab ───────────────────────────────────────────────────────────────

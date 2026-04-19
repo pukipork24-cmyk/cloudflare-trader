@@ -30,7 +30,8 @@ def create_app(config_name='production'):
             init_db(app)
             logger.info("✓ Database initialized")
         except Exception as e:
-            logger.warning(f"⚠️ Database init failed (will retry): {e}")
+            logger.warning(f"⚠️ Database init failed (app will run without DB): {e}")
+            app.config['DATABASE_AVAILABLE'] = False
 
         try:
             # Register blueprints

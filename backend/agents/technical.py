@@ -7,10 +7,14 @@ logger = logging.getLogger(__name__)
 
 class TechnicalAgent(BaseAgent):
     def __init__(self):
-        from evolution.optimizer import optimizer
         super().__init__('technical')
         # Load optimized parameters from evolution system
-        self.params = optimizer.get_params()
+        try:
+            from evolution.optimizer import optimizer
+            self.params = optimizer.get_params() if optimizer else {}
+        except Exception as e:
+            logger.warning(f"Failed to load evolved params: {e}, using defaults")
+            self.params = {}
         logger.info(f"TechnicalAgent initialized with evolved parameters: RSI period={self.params['rsi_period']}, EMA fast={self.params['ema_fast']}")
 
         self.system_prompt = """You are a technical analysis expert. Analyze price charts, indicators (RSI, MACD, Bollinger Bands), support/resistance levels, and volume patterns.
@@ -32,7 +36,11 @@ Return ONLY valid JSON:
     async def analyze(self, data, mode='live'):
         """Analyze technical indicators using evolved parameters"""
         # Reload parameters in case they were updated by evolution cycle
-        self.params = optimizer.get_params()
+        try:
+            from evolution.optimizer import optimizer
+            self.params = optimizer.get_params() if optimizer else {}
+        except Exception as e:
+            logger.warning(f"Failed to reload params: {e}")
 
         if mode == 'live':
             # Build analysis message with evolved parameters
