@@ -2167,7 +2167,7 @@ loadKillSwitchStatus();
 
 // ── Fetch Bitget Balance ────────────────────────────────────────────────────
 function updateBitgetBalance(){
-  fetch('/api/bitget/balance')
+  fetch('https://cloudflare-trader-production.up.railway.app/api/bitget-balance')
     .then(function(res){ return res.json(); })
     .then(function(data){
       console.log('Bitget balance response:', data);
@@ -2647,7 +2647,7 @@ function updateAgentsTab(){
 // ── Portfolio Tab ──────────────────────────────────────────────────────────
 function updatePortfolioTab(){
   // Fetch balance
-  fetch('/api/bitget/balance')
+  fetch('https://cloudflare-trader-production.up.railway.app/api/bitget-balance')
     .then(function(res){ return res.json(); })
     .then(function(data){
       if(data.success){

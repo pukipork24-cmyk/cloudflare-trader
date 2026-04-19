@@ -398,3 +398,124 @@ def get_price_chart():
     except Exception as e:
         logger.error(f"Price chart error: {e}")
         return {'error': str(e)}, 500
+
+@api_bp.route('/ticker', methods=['GET'])
+def get_ticker():
+    """Get current price ticker for a symbol"""
+    try:
+        symbol = request.args.get('symbol', 'BTCUSDT')
+
+        import requests
+        url = f'https://api.bitget.com/v2/public/ticker?symbol={symbol}'
+        resp = requests.get(url, timeout=5)
+        data = resp.json()
+
+        if data.get('code') == '00000' and data.get('data'):
+            ticker = data['data'][0] if data['data'] else {}
+            return {
+                'success': True,
+                'symbol': symbol,
+                'price': float(ticker.get('lastPr', 0)),
+                'change24h': float(ticker.get('change24h', 0)),
+                'high24h': float(ticker.get('high24h', 0)),
+                'low24h': float(ticker.get('low24h', 0)),
+                'volume24h': ticker.get('baseVolume', 0)
+            }, 200
+        else:
+            return {'error': 'Failed to fetch ticker'}, 400
+
+    except Exception as e:
+        logger.error(f"Ticker error: {e}")
+        return {'error': str(e)}, 500
+
+@api_bp.route('/candles', methods=['GET'])
+def get_candles():
+    """Get candlestick data for a symbol"""
+    try:
+        symbol = request.args.get('symbol', 'BTCUSDT')
+        interval = request.args.get('interval', '15m')
+        limit = request.args.get('limit', '60')
+
+        import requests
+        url = f'https://api.bitget.com/v2/public/candles?symbol={symbol}&granularity={interval}&limit={limit}'
+        resp = requests.get(url, timeout=5)
+        data = resp.json()
+
+        if data.get('code') == '00000' and data.get('data'):
+            candles = data['data']
+            return {
+                'success': True,
+                'symbol': symbol,
+                'interval': interval,
+                'data': [
+                    {
+                        'time': int(c[0]),
+                        'open': float(c[1]),
+                        'high': float(c[2]),
+                        'low': float(c[3]),
+                        'close': float(c[4]),
+                        'volume': float(c[5])
+                    }
+                    for c in candles
+                ]
+            }, 200
+        else:
+            return {'error': 'Failed to fetch candles'}, 400
+
+    except Exception as e:
+        logger.error(f"Candles error: {e}")
+        return {'error': str(e)}, 500
+
+@api_bp.route('/prediction', methods=['GET'])
+def get_prediction():
+    """Get AI prediction for current market"""
+    try:
+        symbol = request.args.get('symbol', 'BTC')
+
+        # Return mock prediction (can be enhanced with real ML later)
+        return {
+            'success': True,
+            'symbol': symbol,
+            'prediction': 'ANALYZING',
+            'confidence': 0,
+            'recommendation': 'HOLD',
+            'timestamp': datetime.utcnow().isoformat()
+        }, 200
+
+    except Exception as e:
+        logger.error(f"Prediction error: {e}")
+        return {'error': str(e)}, 500
+
+@api_bp.route('/bitget-balance', methods=['GET'])
+def get_bitget_balance():
+    """Get Bitget account balance"""
+    try:
+        result = bitget_client.get_balance()
+
+        if result.get('success') and result.get('balances'):
+            # Calculate total USD value (assuming USDT balance is the main one)
+            usdt_balance = float(result['balances'].get('USDT', 0))
+
+            return {
+                'success': True,
+                'totalUSD': str(usdt_balance),
+                'totalMYR': str(usdt_balance * 4.5),  # Placeholder conversion
+                'balances': result['balances'],
+                'timestamp': result.get('timestamp')
+            }, 200
+        else:
+            return {
+                'success': False,
+                'error': result.get('error', 'Failed to fetch balance'),
+                'totalUSD': '0.00',
+                'totalMYR': '0.00'
+            }, 400
+
+    except Exception as e:
+        logger.error(f"Balance fetch error: {e}")
+        return {
+            'success': False,
+            'error': str(e),
+            'totalUSD': '0.00',
+            'totalMYR': '0.00'
+        }, 500
