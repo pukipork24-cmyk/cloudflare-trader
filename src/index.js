@@ -1761,10 +1761,29 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   let logAutoScroll = true;
 
   function fetchLogs() {
-    fetch('/api/intelligence-logs?limit=100').then(r => r.json()).then(data => {
-      allLogs = Array.isArray(data) ? data.reverse() : [];
-      renderLogs(allLogs);
-    }).catch(e => console.error('Fetch logs error:', e));
+    fetch('/api/intelligence-logs?limit=100')
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        var rows = (data && Array.isArray(data.logs)) ? data.logs : [];
+        allLogs = rows.map(function(log){
+          return {
+            timestamp: log.timestamp || new Date().toISOString(),
+            level: log.level || 'INFO',
+            message: log.message || log.headline || (log.symbol ? (log.symbol + ' · ' + (log.recommendation || 'HOLD') + ' @ ' + (log.confidence != null ? log.confidence + '%' : '')) : 'Market intelligence'),
+            data: log.data != null ? log.data : { recommendation: log.recommendation, confidence: log.confidence, risk_level: log.risk_level, analysis: log.analysis }
+          };
+        });
+        renderLogs(allLogs);
+        var stats = document.getElementById('log-stats');
+        if (stats) stats.textContent = allLogs.length + ' entr' + (allLogs.length === 1 ? 'y' : 'ies');
+      })
+      .catch(function(e){
+        console.error('Fetch logs error:', e);
+        var stream = document.getElementById('log-stream');
+        if (stream) {
+          stream.innerHTML = '<div style="padding:24px;text-align:center;color:var(--red);font-size:13px">Could not load logs: ' + (e.message || 'network error') + '</div>';
+        }
+      });
   }
 
   function renderLogs(logs) {
@@ -1837,6 +1856,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   document.getElementById('auto-scroll')?.addEventListener('change', e => { logAutoScroll = e.target.checked; });
   document.getElementById('log-search')?.addEventListener('input', applyLogFilters);
 
+  window.fetchLogs = fetchLogs;
   fetchLogs();
   setInterval(fetchLogs, 10000);
   </script>
@@ -2845,36 +2865,34 @@ function resetEvolutionParams(){
 
 // ── Logs Tab ───────────────────────────────────────────────────────────────
 function updateLogsTab(){
-  fetch('/api/system-logs?limit=100')
+  if (typeof window.fetchLogs === 'function') {
+    window.fetchLogs();
+    return;
+  }
+  fetch('/api/intelligence-logs?limit=100')
     .then(function(res){ return res.json(); })
     .then(function(data){
-      var container = document.getElementById('logsContent');
-      if(!data.logs || data.logs.length === 0){
-        container.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px 20px"><div style="font-size:3rem;margin-bottom:15px">📝</div><div>No system logs yet.</div><div style="font-size:12px;margin-top:8px">Logs will appear when agents run and trades are executed.</div></div>';
+      var stream = document.getElementById('log-stream');
+      if (!stream) return;
+      var rows = (data && Array.isArray(data.logs)) ? data.logs : [];
+      if (rows.length === 0) {
+        stream.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px 20px"><div style="font-size:3rem;margin-bottom:15px">📝</div><div>No intelligence logs yet.</div><div style="font-size:12px;margin-top:8px">Logs appear after the worker runs multi-agent analysis (scheduled or manual).</div></div>';
         return;
       }
       var html = '';
-      data.logs.forEach(function(log){
-        var ts = new Date(log.timestamp);
+      rows.forEach(function(log){
+        var ts = new Date(log.timestamp || Date.now());
         var tsStr = ts.toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
-        var levelColor = log.level === 'ERROR' ? 'var(--red)' : log.level === 'WARN' ? 'var(--yellow)' : log.level === 'SUCCESS' ? 'var(--green)' : 'var(--blue)';
-        var levelBg = log.level === 'ERROR' ? 'rgba(255,45,85,0.15)' : log.level === 'WARN' ? 'rgba(255,204,0,0.15)' : log.level === 'SUCCESS' ? 'rgba(0,230,118,0.15)' : 'rgba(0,150,255,0.15)';
-        var levelEmoji = log.level === 'ERROR' ? '❌' : log.level === 'WARN' ? '⚠️' : log.level === 'SUCCESS' ? '✅' : 'ℹ️';
-        html += '<div style="background:var(--card);border-left:3px solid ' + levelColor + ';border-radius:6px;padding:12px 15px;display:flex;gap:12px;align-items:start">'
-          + '<div style="font-size:18px;flex-shrink:0">' + levelEmoji + '</div>'
-          + '<div style="flex:1">'
-          + '<div style="display:flex;justify-content:space-between;align-items:start">'
-          + '<div style="color:var(--txt);font-weight:600;font-size:13px">' + log.message + '</div>'
-          + '<div style="color:var(--muted);font-size:11px;white-space:nowrap;margin-left:10px">' + tsStr + '</div>'
-          + '</div>'
-          + (log.data ? '<div style="color:var(--muted);font-size:11px;margin-top:6px;font-family:monospace">' + JSON.stringify(log.data) + '</div>' : '')
-          + '</div>'
-          + '</div>';
+        var msg = log.headline || log.message || (log.symbol + ' · ' + (log.recommendation || 'HOLD'));
+        html += '<div style="background:var(--card);border-left:3px solid var(--gold);border-radius:6px;padding:12px 15px;margin-bottom:8px">'
+          + '<div style="color:var(--gold);font-weight:700;font-size:13px">' + (log.symbol || '—') + ' · ' + tsStr + '</div>'
+          + '<div style="color:var(--txt);font-size:12px;margin-top:6px">' + msg + '</div></div>';
       });
-      container.innerHTML = html;
+      stream.innerHTML = html;
     })
     .catch(function(e){
-      document.getElementById('logsContent').innerHTML = '<div style="color:var(--red);padding:20px">Error loading logs: ' + e.message + '</div>';
+      var stream = document.getElementById('log-stream');
+      if (stream) stream.innerHTML = '<div style="color:var(--red);padding:20px">Error loading logs: ' + e.message + '</div>';
     });
 }
 
@@ -2920,7 +2938,8 @@ function fetchAndStreamLogs(){
     .then(function(data){
       if(!data.logs || data.logs.length === 0) return;
 
-      const container = document.getElementById('logsContent');
+      const container = document.getElementById('log-stream');
+      if (!container) return;
       const totalLogs = data.logs.length;
 
       // Only update if there are new logs
