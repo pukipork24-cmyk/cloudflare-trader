@@ -31,9 +31,10 @@ class BitgetClient:
         else:
             logger.warning("⚠️ Bitget client initialized (stub mode - missing API credentials)")
 
-    def _sign_request(self, method, path, body=''):
-        """Generate HMAC-SHA256 signature for Bitget API"""
-        timestamp = str(int(time.time() * 1000))
+    def _sign_request(self, method, path, body='', timestamp=None):
+        """Generate HMAC-SHA256 signature for Bitget API (timestamp must match ACCESS-TIMESTAMP)."""
+        if timestamp is None:
+            timestamp = str(int(time.time() * 1000))
         message = timestamp + method.upper() + path
         if body:
             message += body
@@ -50,7 +51,7 @@ class BitgetClient:
     def _get_headers(self, method, path, body=''):
         """Build request headers with authentication"""
         timestamp = str(int(time.time() * 1000))
-        signature = self._sign_request(method, path, body)
+        signature = self._sign_request(method, path, body, timestamp)
 
         return {
             'Content-Type': 'application/json',
@@ -58,6 +59,7 @@ class BitgetClient:
             'ACCESS-SIGN': signature,
             'ACCESS-TIMESTAMP': timestamp,
             'ACCESS-PASSPHRASE': self.passphrase,
+            'locale': 'en-US',
             'User-Agent': 'Python-Trader/1.0'
         }
 
@@ -67,7 +69,8 @@ class BitgetClient:
             return {"success": False, "error": "Bitget credentials not configured"}
 
         try:
-            path = '/api/v2/spot/account/balance'
+            # Official path (see Bitget "Get Account Assets"); include query in sign + URL.
+            path = '/api/v2/spot/account/assets?assetType=all'
             headers = self._get_headers('GET', path)
 
             resp = requests.get(self.base_url + path, headers=headers, timeout=10)
@@ -75,15 +78,18 @@ class BitgetClient:
 
             if resp.status_code == 200 and data.get('code') == '00000':
                 balances = {}
-                for coin in data.get('data', []):
-                    available = float(coin.get('available', 0))
+                for asset in data.get('data', []) or []:
+                    sym = (asset.get('coin') or asset.get('coinName') or '').upper()
+                    if not sym:
+                        continue
+                    available = float(asset.get('available') or 0)
                     if available > 0:
-                        balances[coin['coinName']] = available
+                        balances[sym] = available
 
                 logger.info(f"✓ Fetched Bitget balance: {len(balances)} coins")
                 return {"success": True, "balances": balances, "timestamp": datetime.utcnow().isoformat()}
             else:
-                error = data.get('msg', 'Unknown error')
+                error = data.get('msg') or data.get('message', 'Unknown error')
                 logger.error(f"✗ Bitget balance error: {error}")
                 return {"success": False, "error": error}
 
@@ -128,7 +134,7 @@ class BitgetClient:
                     "timestamp": datetime.utcnow().isoformat()
                 }
             else:
-                error = data.get('msg', 'Unknown error')
+                error = data.get('msg') or data.get('message', 'Unknown error')
                 logger.error(f"✗ Bitget order error: {error}")
                 return {"success": False, "error": error}
 
@@ -158,7 +164,7 @@ class BitgetClient:
                     "timestamp": datetime.utcnow().isoformat()
                 }
             else:
-                error = data.get('msg', 'Unknown error')
+                error = data.get('msg') or data.get('message', 'Unknown error')
                 logger.error(f"✗ Bitget open orders error: {error}")
                 return {"success": False, "error": error}
 
@@ -187,7 +193,7 @@ class BitgetClient:
                 logger.info(f"✓ Order cancelled: {order_id}")
                 return {"success": True, "order_id": order_id}
             else:
-                error = data.get('msg', 'Unknown error')
+                error = data.get('msg') or data.get('message', 'Unknown error')
                 logger.error(f"✗ Bitget cancel error: {error}")
                 return {"success": False, "error": error}
 

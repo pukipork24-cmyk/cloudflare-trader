@@ -15,6 +15,29 @@ logger = logging.getLogger(__name__)
 
 api_bp = Blueprint('api', __name__)
 
+_BITGET_HTTP = 'https://api.bitget.com'
+
+
+def _bitget_spot_granularity(interval: str) -> str:
+    """Map UI/Binance-style intervals to Bitget v2 spot `granularity` (see Bitget API docs)."""
+    key = (interval or '15m').strip().lower()
+    return {
+        '1m': '1min',
+        '3m': '3min',
+        '5m': '5min',
+        '15m': '15min',
+        '30m': '30min',
+        '1h': '1h',
+        '2h': '2H',
+        '4h': '4h',
+        '6h': '6h',
+        '12h': '12h',
+        '1d': '1day',
+        '3d': '3day',
+        '1w': '1week',
+        '1mo': '1M',
+    }.get(key, interval)
+
 # ===== HEALTH CHECK =====
 
 @api_bp.route('/', methods=['GET'])
@@ -374,7 +397,7 @@ def get_price_chart():
         symbol = request.args.get('symbol', 'BTCUSDT')
 
         import requests
-        url = f'https://api.bitget.com/v2/public/candles?symbol={symbol}&granularity=1h&limit=24'
+        url = f'{_BITGET_HTTP}/api/v2/spot/market/candles?symbol={symbol}&granularity=1h&limit=24'
         resp = requests.get(url, timeout=5)
         data = resp.json()
 
@@ -406,7 +429,7 @@ def get_ticker():
         symbol = request.args.get('symbol', 'BTCUSDT')
 
         import requests
-        url = f'https://api.bitget.com/v2/public/ticker?symbol={symbol}'
+        url = f'{_BITGET_HTTP}/api/v2/spot/market/tickers?symbol={symbol}'
         resp = requests.get(url, timeout=5)
         data = resp.json()
 
@@ -437,7 +460,11 @@ def get_candles():
         limit = request.args.get('limit', '60')
 
         import requests
-        url = f'https://api.bitget.com/v2/public/candles?symbol={symbol}&granularity={interval}&limit={limit}'
+        gran = _bitget_spot_granularity(interval)
+        url = (
+            f'{_BITGET_HTTP}/api/v2/spot/market/candles'
+            f'?symbol={symbol}&granularity={gran}&limit={limit}'
+        )
         resp = requests.get(url, timeout=5)
         data = resp.json()
 
@@ -492,15 +519,15 @@ def get_bitget_balance():
     try:
         result = bitget_client.get_balance()
 
-        if result.get('success') and result.get('balances'):
-            # Calculate total USD value (assuming USDT balance is the main one)
-            usdt_balance = float(result['balances'].get('USDT', 0))
+        if result.get('success'):
+            balances = result.get('balances') or {}
+            usdt_balance = float(balances.get('USDT', 0))
 
             return {
                 'success': True,
                 'totalUSD': str(usdt_balance),
                 'totalMYR': str(usdt_balance * 4.5),  # Placeholder conversion
-                'balances': result['balances'],
+                'balances': balances,
                 'timestamp': result.get('timestamp')
             }, 200
         else:
