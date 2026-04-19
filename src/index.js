@@ -931,11 +931,28 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   letter-spacing:.08em;text-transform:uppercase;cursor:pointer;
   background:transparent;border:none;color:var(--muted);
   border-bottom:2px solid transparent;white-space:nowrap;
-  transition:color .2s,border-color .2s;margin-bottom:-1px;
+  transition:color .2s,border-color .2s,background .2s; margin-bottom:-1px;
+  border-radius:8px 8px 0 0;
 }
-.tab-btn:hover{color:var(--txt)}
+.tab-btn:hover{color:var(--txt);background:rgba(127,212,255,0.08)}
 .tab-btn.active{color:var(--gold);border-bottom-color:var(--gold);text-shadow:0 0 8px rgba(110,194,255,0.4)}
-.tab-btn .t-icon{font-size:.85rem}
+
+.pc-range-btn{
+  background:var(--surf);
+  border:1px solid var(--bdr2);
+  color:var(--txt);
+  padding:0.24rem 0.56rem;
+  border-radius:8px;
+  font-size:0.68rem;
+  font-weight:700;
+  cursor:pointer;
+  transition:all .2s;
+}
+.pc-range-btn:hover{
+  border-color:var(--gold);
+  color:var(--gold);
+  box-shadow:0 4px 12px rgba(110,194,255,0.14);
+}
 
 /* ── TAB PANELS ── */
 .tab-panel{display:none;flex:1;overflow:hidden;flex-direction:column}
@@ -1352,12 +1369,12 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 </div>
 
 <div id="tabbar">
-  <button class="tab-btn active" data-tab="dashboard"><span class="t-icon">&#9636;</span> Dashboard</button>
-  <button class="tab-btn" data-tab="portfolio"><span class="t-icon">&#128188;</span> Portfolio</button>
-  <button class="tab-btn" data-tab="evolution"><span class="t-icon">🧬</span> Evolution</button>
-  <button class="tab-btn" data-tab="logs"><span class="t-icon">&#128202;</span> Logs</button>
-  <button class="tab-btn" data-tab="agents"><span class="t-icon">&#129302;</span> Agents</button>
-  <button class="tab-btn" data-tab="settings"><span class="t-icon">&#9881;</span> Settings</button>
+  <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+  <button class="tab-btn" data-tab="portfolio">Portfolio</button>
+  <button class="tab-btn" data-tab="evolution">Evolution</button>
+  <button class="tab-btn" data-tab="logs">Logs</button>
+  <button class="tab-btn" data-tab="agents">Agents</button>
+  <button class="tab-btn" data-tab="settings">Settings</button>
 </div>
 
 <!-- ══ DASHBOARD TAB ══ -->
@@ -1438,10 +1455,10 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem">
         <div style="color:var(--txt-dim);font-size:0.85rem" id="priceChartTitle">Price chart · last 24 hours</div>
         <div id="priceChartRangeBtns" style="display:flex;gap:4px;flex-wrap:wrap">
-          <button type="button" class="pc-range-btn" data-range="24h" style="background:var(--surf);border:1px solid var(--bdr2);color:var(--txt);padding:0.2rem 0.5rem;border-radius:6px;font-size:0.68rem;font-weight:700;cursor:pointer">24H</button>
-          <button type="button" class="pc-range-btn" data-range="week" style="background:var(--surf);border:1px solid var(--bdr2);color:var(--txt);padding:0.2rem 0.5rem;border-radius:6px;font-size:0.68rem;font-weight:700;cursor:pointer">Week</button>
-          <button type="button" class="pc-range-btn" data-range="month" style="background:var(--surf);border:1px solid var(--bdr2);color:var(--txt);padding:0.2rem 0.5rem;border-radius:6px;font-size:0.68rem;font-weight:700;cursor:pointer">Month</button>
-          <button type="button" class="pc-range-btn" data-range="year" style="background:var(--surf);border:1px solid var(--bdr2);color:var(--txt);padding:0.2rem 0.5rem;border-radius:6px;font-size:0.68rem;font-weight:700;cursor:pointer">Year</button>
+          <button type="button" class="pc-range-btn" data-range="24h">24H</button>
+          <button type="button" class="pc-range-btn" data-range="week">Week</button>
+          <button type="button" class="pc-range-btn" data-range="month">Month</button>
+          <button type="button" class="pc-range-btn" data-range="year">Year</button>
         </div>
       </div>
       <div style="flex:1;position:relative;min-height:180px">
