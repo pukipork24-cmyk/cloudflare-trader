@@ -2165,19 +2165,31 @@ function updateKillSwitchUI(data){
 }
 loadKillSwitchStatus();
 
-// ── Fetch Bitget Balance ────────────────────────────────────────────────────
+// ── Fetch Bitget Balance (Railway returns totalUSD / totalMYR, not usdtBalance) ──
+function formatLiveBalanceDisplay(data){
+  if(!data || !data.success) return null;
+  var balanceUSD = parseFloat(data.totalUSD) || 0;
+  var balanceMYR = parseFloat(data.totalMYR) || 0;
+  return '$' + balanceUSD.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) + ' USD / RM' + balanceMYR.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function applyLiveBalanceToUI(data){
+  var displayText = formatLiveBalanceDisplay(data);
+  if(!displayText) return false;
+  var elPf = document.getElementById('pf-bal');
+  var elPt = document.getElementById('pt-balance');
+  if(elPf) elPf.textContent = displayText;
+  if(elPt) elPt.textContent = displayText;
+  return true;
+}
+
 function updateBitgetBalance(){
   fetch('https://cloudflare-trader-production.up.railway.app/api/bitget-balance')
     .then(function(res){ return res.json(); })
     .then(function(data){
       console.log('Bitget balance response:', data);
-      if(data.success){
-        var balanceUSD = parseFloat(data.totalUSD) || 0;
-        var balanceMYR = parseFloat(data.totalMYR) || 0;
-        var displayText = '$' + balanceUSD.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) + ' USD / RM' + balanceMYR.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-        document.getElementById('pf-bal').textContent = displayText;
-        document.getElementById('pt-bal').textContent = displayText;
-        console.log('✅ Bitget balance updated: ' + displayText);
+      if(applyLiveBalanceToUI(data)){
+        console.log('✅ Bitget balance updated');
       } else {
         console.error('❌ Failed to fetch Bitget balance - Full response:', JSON.stringify(data, null, 2));
       }
@@ -2646,13 +2658,12 @@ function updateAgentsTab(){
 
 // ── Portfolio Tab ──────────────────────────────────────────────────────────
 function updatePortfolioTab(){
-  // Fetch balance
+  // Same Bitget totals as dashboard (must use totalUSD/totalMYR from API)
   fetch('https://cloudflare-trader-production.up.railway.app/api/bitget-balance')
     .then(function(res){ return res.json(); })
     .then(function(data){
-      if(data.success){
-        const balance = data.usdtBalance || 10000;
-        document.getElementById('pt-balance').textContent = '$' + balance.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      if(!applyLiveBalanceToUI(data)){
+        console.warn('Portfolio tab: balance unavailable', data && data.error);
       }
     })
     .catch(function(e){ console.warn('Portfolio balance fetch failed:', e); });
