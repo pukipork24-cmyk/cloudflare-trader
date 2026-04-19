@@ -869,6 +869,45 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .abtn-buy:hover{box-shadow:0 6px 20px #00e67644}
 .abtn-sell:hover{box-shadow:0 6px 20px #ff2d5544}
 .abtn:active{transform:translateY(0)}
+
+/* Shared action buttons (phase 4) */
+.btn-ui{
+  border:none;
+  border-radius:8px;
+  padding:10px 14px;
+  cursor:pointer;
+  font-size:12px;
+  font-weight:700;
+  transition:all .2s;
+}
+.btn-ui:hover{transform:translateY(-1px)}
+.btn-ui:active{transform:translateY(0)}
+.btn-ui-primary{
+  background:linear-gradient(135deg,#7ecbff,#5aa9e8);
+  color:#031524;
+  box-shadow:0 6px 18px rgba(110,194,255,0.2);
+}
+.btn-ui-success{
+  background:linear-gradient(135deg,#31bf90,#2fd6a1);
+  color:#032018;
+  box-shadow:0 6px 18px rgba(49,191,144,0.22);
+}
+.btn-ui-danger{
+  background:linear-gradient(135deg,#d4677d,#f37d8f);
+  color:#fff;
+  box-shadow:0 6px 18px rgba(243,125,143,0.2);
+}
+.btn-ui-ghost{
+  background:rgba(8,18,31,0.5);
+  color:var(--txt);
+  border:1px solid var(--bdr2);
+}
+.btn-ui-outline-danger{
+  background:rgba(243,125,143,0.1);
+  color:var(--red);
+  border:1px solid var(--red);
+}
+.btn-block{width:100%}
 .log-wrap{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:.3rem}
 .le{display:flex;align-items:center;gap:.5rem;padding:.4rem .6rem;border-radius:7px;
   border:1px solid var(--bdr);background:var(--card2);font-size:.72rem}
@@ -1500,7 +1539,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
         <div class="chip"><div class="chip-k">Vol</div><div class="chip-v" id="c-vol">--</div></div>
         <div class="chip"><div class="chip-k">Trend</div><div class="chip-v" id="c-trend">--</div></div>
       </div>
-      <button id="btnAnalyze" onclick="runClaudeAnalysis()" style="width:100%;background:var(--gold);color:#000;border:none;padding:10px 16px;border-radius:8px;cursor:pointer;font-weight:800;font-size:13px;margin-top:12px;transition:all 0.2s;box-shadow:0 4px 15px rgba(240,165,0,0.3)">▶ RUN ANALYSIS</button>
+      <button id="btnAnalyze" class="btn-ui btn-ui-primary btn-block" onclick="runClaudeAnalysis()" style="margin-top:12px;font-size:13px;font-weight:800;letter-spacing:.06em">▶ RUN ANALYSIS</button>
     </div>
 
     <div class="row-resizer"></div>
@@ -1601,8 +1640,8 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 
     <!-- Control Buttons -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
-      <button onclick="approveEvolution()" style="background:linear-gradient(135deg,#00c853,#00e676);color:#000;border:none;border-radius:10px;padding:1rem;cursor:pointer;font-weight:800;font-size:.9rem;text-transform:uppercase;letter-spacing:.1em;transition:all 0.2s;box-shadow:0 4px 15px rgba(0,230,118,0.2)">▶ Execute Evolution</button>
-      <button onclick="resetEvolutionParams()" style="background:linear-gradient(135deg,#ff6b6b,#ff2d55);color:#fff;border:none;border-radius:10px;padding:1rem;cursor:pointer;font-weight:800;font-size:.9rem;text-transform:uppercase;letter-spacing:.1em;transition:all 0.2s;box-shadow:0 4px 15px rgba(255,45,85,0.2)">⟲ Reset Params</button>
+      <button class="btn-ui btn-ui-success" onclick="approveEvolution()" style="padding:1rem;font-weight:800;font-size:.9rem;text-transform:uppercase;letter-spacing:.1em">▶ Execute Evolution</button>
+      <button class="btn-ui btn-ui-danger" onclick="resetEvolutionParams()" style="padding:1rem;font-weight:800;font-size:.9rem;text-transform:uppercase;letter-spacing:.1em">⟲ Reset Params</button>
     </div>
 
     <!-- Current Parameters -->
@@ -1634,7 +1673,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
           <div style="font-size: 13px; color: var(--txt);">Logged in as: <strong style="color: var(--gold);" id="loggedInUser">hongrui</strong></div>
           <div style="font-size: 12px; color: var(--txt-dim); margin-top: 4px;">Sign out of your account</div>
         </div>
-        <button class="btn-logout" onclick="handleLogout()" style="background: var(--red); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.3s;">Logout</button>
+        <button class="btn-logout btn-ui btn-ui-danger" onclick="handleLogout()" style="padding:8px 16px;font-weight:600;font-size:13px;">Logout</button>
       </div>
     </div>
 
@@ -1646,7 +1685,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
             <div style="font-size: 13px; font-weight: 600; color: var(--txt);">Kill Switch</div>
             <div style="font-size: 12px; color: var(--txt-dim); margin-top: 4px;">Stop or resume automated AI trading</div>
           </div>
-          <button id="killSwitchBtn" onclick="toggleKillSwitch()" style="background: var(--red); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: background 0.2s;">Loading...</button>
+          <button id="killSwitchBtn" class="btn-ui btn-ui-danger" onclick="toggleKillSwitch()" style="padding:8px 16px;font-weight:600;font-size:13px;">Loading...</button>
         </div>
         <div id="killSwitchStatus" style="font-size: 11px; color: var(--txt-dim); margin-top: 8px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 4px;"></div>
       </div>
@@ -1720,7 +1759,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
         </div>
 
         <!-- Save Button -->
-        <button onclick="saveAdvancedSettings()" style="width: 100%; background: linear-gradient(135deg,#00c853,#00e676); color: #000; border: none; border-radius: 6px; padding: 10px; cursor: pointer; font-weight: 700; font-size: 12px; transition: all 0.2s;">💾 Save Settings</button>
+        <button class="btn-ui btn-ui-success btn-block" onclick="saveAdvancedSettings()">Save Settings</button>
       </div>
     </div>
   </div>
@@ -1762,7 +1801,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
         <button class="chip" data-filter="level" data-value="ERROR" style="padding: 6px 10px; border: 1px solid var(--border); background: rgba(255,0,0,0.2); color: var(--red); border-radius: 16px; font-size: 11px; cursor: pointer;">Error</button>
       </div>
       <input type="text" id="log-search" placeholder="Search logs..." style="margin-left: auto; padding: 6px 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 4px; color: var(--txt); font-size: 12px; min-width: 200px;">
-      <button onclick="applyLogFilters()" style="padding: 6px 12px; background: var(--gold); color: #000; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">Filter</button>
+      <button class="btn-ui btn-ui-primary" onclick="applyLogFilters()" style="padding:6px 12px;">Filter</button>
     </div>
 
     <!-- Log Stream -->
@@ -1784,9 +1823,9 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
         <span id="log-stats">Loading...</span>
       </div>
       <div style="display: flex; gap: 8px;">
-        <button onclick="exportLogs('json')" style="padding: 6px 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: var(--txt); border-radius: 4px; cursor: pointer; font-size: 12px;">⬇ JSON</button>
-        <button onclick="exportLogs('csv')" style="padding: 6px 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: var(--txt); border-radius: 4px; cursor: pointer; font-size: 12px;">⬇ CSV</button>
-        <button onclick="clearLogs()" style="padding: 6px 12px; background: rgba(255,0,0,0.2); border: 1px solid var(--red); color: var(--red); border-radius: 4px; cursor: pointer; font-size: 12px;">🗑 Clear</button>
+        <button class="btn-ui btn-ui-ghost" onclick="exportLogs('json')" style="padding:6px 12px;">JSON</button>
+        <button class="btn-ui btn-ui-ghost" onclick="exportLogs('csv')" style="padding:6px 12px;">CSV</button>
+        <button class="btn-ui btn-ui-outline-danger" onclick="clearLogs()" style="padding:6px 12px;">Clear</button>
       </div>
     </div>
   </div>
