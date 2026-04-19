@@ -2343,7 +2343,12 @@ var currentTradingSymbol = 'BTCUSDT';
 function loadCurrentSymbol(){
   fetch('/api/settings/symbol')
     .then(function(r){ return r.json(); })
-    .then(function(d){ currentTradingSymbol = d.symbol; updateSymbolDisplay(); })
+    .then(function(d){
+      currentTradingSymbol = d.symbol;
+      updateSymbolDisplay();
+      var pair = CRYPTO_PAIRS.find(function(p){ return p.sym === currentTradingSymbol; }) || CRYPTO_PAIRS[0];
+      fetchPriceData(pair.label);
+    })
     .catch(function(e){ console.error('Symbol load error:', e); });
 }
 
@@ -2421,6 +2426,9 @@ function selectSymbol(sym){
       S.candles = [];
       fetchCandles('15m', 60);
       fetchAI();
+      var pair = CRYPTO_PAIRS.find(function(p){ return p.sym === sym; });
+      if (pair) fetchPriceData(pair.label);
+      else fetchPriceData(sym.replace('USDT', '') + '/USDT');
       console.log('Symbol changed to:', sym);
     } else {
       console.error('Symbol selection failed:', d.error);
@@ -2549,6 +2557,7 @@ function buildSparkList(){
 function switchSparkSymbol(sym){
   activeSparkSymbol = sym;
   currentTradingSymbol = sym + 'USDT';
+  updateSymbolDisplay();
   buildSparkList();
   renderSparks();
   fetchPriceData(sym + '/USDT');
