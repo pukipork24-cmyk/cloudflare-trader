@@ -12,5 +12,17 @@ class GroqClient:
         """Stub - not implemented"""
         return {"error": "Groq not configured", "recommendation": "HOLD", "confidence": 0}
 
+    def parse_json_response(self, response):
+        """Parse JSON response from Groq"""
+        if isinstance(response, dict):
+            return response
+        if isinstance(response, str):
+            try:
+                import json
+                return json.loads(response)
+            except:
+                return {"error": "Failed to parse response", "recommendation": "HOLD", "confidence": 0}
+        return {"error": "Invalid response format", "recommendation": "HOLD", "confidence": 0}
+
 # Global instance
 groq = GroqClient()
