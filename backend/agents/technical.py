@@ -1,6 +1,5 @@
 """Technical Analysis Agent"""
 from .base import BaseAgent
-from evolution.optimizer import optimizer
 import json
 import logging
 
@@ -8,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 class TechnicalAgent(BaseAgent):
     def __init__(self):
+        from evolution.optimizer import optimizer
         super().__init__('technical')
         # Load optimized parameters from evolution system
         self.params = optimizer.get_params()
