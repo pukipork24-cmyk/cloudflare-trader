@@ -665,6 +665,7 @@ Current signal: ${sig} at ${conf}% confidence`;
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>pukitradev2 - AI Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 :root{
   --bg:#0a0000;--surf:#0f0000;--card:#140000;--card2:#1a0000;
@@ -1413,6 +1414,13 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
       </div>
       <div class="ch-label"><strong id="ch-label-sym">BTC / USDT</strong>AI Trading System · Live</div>
     </div>
+    <!-- Mini Price Chart -->
+    <div style="flex:1;display:flex;flex-direction:column;padding:1rem;background:rgba(0,0,0,0.2);border-radius:8px;margin:0.75rem">
+      <div style="color:var(--txt-dim);font-size:0.85rem;margin-bottom:0.5rem">24h Price Chart</div>
+      <div style="flex:1;position:relative;min-height:180px">
+        <canvas id="priceChart"></canvas>
+      </div>
+    </div>
   </div>
 
   <div class="col-resizer" id="cr-right"></div>
@@ -1955,6 +1963,98 @@ function handleLogout(){
 // Check auth on page load
 checkAuth();
 
+// ── Price Chart ─────────────────────────────────────────────────────────────
+let priceChartInstance = null;
+let priceChartData = [];
+
+async function fetchPriceData(symbol) {
+  try {
+    // Fetch 1h candlestick data from Bitget public API (24 hours = 24 candles)
+    const pair = symbol.replace('/', '').toUpperCase();
+    const url = 'https://api.bitget.com/v2/public/candles?symbol=' + pair + '&granularity=1h&limit=24';
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if(data.code === '00000' && data.data) {
+      priceChartData = data.data.map(candle => ({
+        time: new Date(parseInt(candle[0])),
+        open: parseFloat(candle[1]),
+        close: parseFloat(candle[4])
+      }));
+      renderPriceChart();
+    }
+  } catch(e) {
+    console.warn('Failed to fetch price data:', e);
+  }
+}
+
+function renderPriceChart() {
+  const ctx = document.getElementById('priceChart');
+  if(!ctx || priceChartData.length === 0) return;
+
+  if(priceChartInstance) priceChartInstance.destroy();
+
+  const labels = priceChartData.map(d => d.time.getHours() + ':00');
+  const prices = priceChartData.map(d => d.close);
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices);
+
+  priceChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Price (24h)',
+        data: prices,
+        borderColor: 'var(--gold)',
+        backgroundColor: 'rgba(204,0,0,0.1)',
+        borderWidth: 2,
+        tension: 0.3,
+        fill: true,
+        pointRadius: 2,
+        pointBackgroundColor: 'var(--gold)',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,0.8)',
+          titleColor: 'var(--gold)',
+          bodyColor: 'var(--txt)',
+          borderColor: 'var(--gold)',
+          borderWidth: 1
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: false,
+          min: minPrice * 0.99,
+          max: maxPrice * 1.01,
+          ticks: { color: 'var(--muted)', font: { size: 10 } },
+          grid: { color: 'rgba(255,255,255,0.05)' }
+        },
+        x: {
+          ticks: { color: 'var(--muted)', font: { size: 9 } },
+          grid: { color: 'rgba(255,255,255,0.05)' }
+        }
+      }
+    }
+  });
+}
+
+// Fetch price data on page load and refresh every 5 minutes
+window.addEventListener('load', function() {
+  const symbol = document.getElementById('currentSymbolLabel')?.textContent || 'BTC/USDT';
+  fetchPriceData(symbol);
+  setInterval(() => fetchPriceData(symbol), 5 * 60 * 1000);
+});
+
 // ── Advanced Settings ──────────────────────────────────────────────────────
 function loadAdvancedSettings(){
   try{
@@ -2373,6 +2473,7 @@ function switchSparkSymbol(sym){
   currentTradingSymbol = sym + 'USDT';
   buildSparkList();
   renderSparks();
+  fetchPriceData(sym + '/USDT');
   console.log('🔄 Switched trading target to ' + sym);
   setTimeout(function(){ fetchAI(); }, 300);
 }
