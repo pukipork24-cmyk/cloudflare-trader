@@ -68,7 +68,7 @@ def create_app(config_name='production'):
             'status': 'online',
             'service': 'AI Trading Bot Backend',
             'version': '2.0',
-            'docs': 'https://cloudflare-trader-production.up.railway.app/api/'
+            'docs': '/api/'
         }, 200
 
     # Error handlers

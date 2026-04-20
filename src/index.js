@@ -2931,7 +2931,7 @@ async function fetchPriceData(symbol, range) {
 
     const pair = symbol.replace('/', '').toUpperCase();
     const response = await fetch(
-      'https://cloudflare-trader-production.up.railway.app/api/price-chart?symbol=' + encodeURIComponent(pair)
+      '/api/price-chart?symbol=' + encodeURIComponent(pair)
         + '&range=' + encodeURIComponent(priceChartRange)
     );
     const data = await response.json();
@@ -3221,7 +3221,7 @@ function applyLiveBalanceToUI(data){
 }
 
 function updateBitgetBalance(){
-  fetch('https://cloudflare-trader-production.up.railway.app/api/bitget-balance')
+  fetch('/api/bitget-balance')
     .then(function(res){ return res.json(); })
     .then(function(data){
       console.log('Bitget balance response:', data);
@@ -3750,7 +3750,7 @@ function updateAgentsTab(){
 // ── Portfolio Tab ──────────────────────────────────────────────────────────
 function updatePortfolioTab(){
   // Same Bitget totals as dashboard (must use totalUSD/totalMYR from API)
-  fetch('https://cloudflare-trader-production.up.railway.app/api/bitget-balance')
+  fetch('/api/bitget-balance')
     .then(function(res){ return res.json(); })
     .then(function(data){
       if(!applyLiveBalanceToUI(data)){
@@ -4037,7 +4037,7 @@ function applyInterval(){
 }
 
 // ── Evolution Control ────────────────────────────────────────────────────
-const RAILWAY_BASE='https://cloudflare-trader-production.up.railway.app';
+const RAILWAY_BASE='';
 
 function switchPanel(panel){
   const historyPanel = document.getElementById('panel-log');
