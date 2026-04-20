@@ -2950,6 +2950,20 @@ async function fetchPriceData(symbol, range) {
   }
 }
 
+// Calculate moving average for given period
+function calculateMovingAverage(data, period) {
+  const ma = [];
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) {
+      ma.push(null);
+    } else {
+      const sum = data.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
+      ma.push(sum / period);
+    }
+  }
+  return ma;
+}
+
 function renderPriceChart() {
   const ctx = document.getElementById('priceChart');
   if(!ctx || priceChartData.length === 0) return;
@@ -2958,39 +2972,113 @@ function renderPriceChart() {
 
   const labels = priceChartData.map(function(d){ return formatPriceChartAxisLabel(d.time, priceChartRange); });
   const prices = priceChartData.map(d => d.close);
+  const volumes = priceChartData.map(d => d.volume || 0);
+  const highs = priceChartData.map(d => d.high);
+  const lows = priceChartData.map(d => d.low);
   const minPrice = Math.min(...prices);
   const maxPrice = Math.max(...prices);
   var dsLabel = (priceChartRange === '24h') ? 'Price (24h)' : (priceChartRange === 'week') ? 'Price (7d)' : (priceChartRange === 'month') ? 'Price (1M)' : 'Price (1Y)';
+
+  // Calculate moving averages
+  const ma20 = calculateMovingAverage(prices, 20);
+  const ma50 = calculateMovingAverage(prices, 50);
 
   priceChartInstance = new Chart(ctx, {
     type: 'line',
     data: {
       labels: labels,
-      datasets: [{
-        label: dsLabel,
-        data: prices,
-        borderColor: 'var(--gold)',
-        backgroundColor: 'rgba(204,0,0,0.1)',
-        borderWidth: 2,
-        tension: 0.3,
-        fill: true,
-        pointRadius: 2,
-        pointBackgroundColor: 'var(--gold)',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 1
-      }]
+      datasets: [
+        {
+          label: 'Price',
+          data: prices,
+          borderColor: '#f0a500',
+          backgroundColor: 'rgba(240, 165, 0, 0.1)',
+          borderWidth: 2,
+          tension: 0.3,
+          fill: true,
+          pointRadius: 1,
+          pointBackgroundColor: '#f0a500',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 1,
+          yAxisID: 'y'
+        },
+        {
+          label: 'MA20',
+          data: ma20,
+          borderColor: '#00d4ff',
+          backgroundColor: 'transparent',
+          borderWidth: 1.5,
+          tension: 0.3,
+          fill: false,
+          pointRadius: 0,
+          yAxisID: 'y',
+          hidden: false
+        },
+        {
+          label: 'MA50',
+          data: ma50,
+          borderColor: '#ff6b6b',
+          backgroundColor: 'transparent',
+          borderWidth: 1.5,
+          tension: 0.3,
+          fill: false,
+          pointRadius: 0,
+          yAxisID: 'y',
+          hidden: true
+        },
+        {
+          label: 'Volume',
+          data: volumes,
+          type: 'bar',
+          backgroundColor: function(context) {
+            const index = context.dataIndex;
+            if (index > 0) {
+              const currentPrice = prices[index];
+              const previousPrice = prices[index - 1];
+              return currentPrice >= previousPrice ? 'rgba(0, 230, 118, 0.3)' : 'rgba(255, 45, 85, 0.3)';
+            }
+            return 'rgba(156, 163, 175, 0.3)';
+          },
+          borderColor: function(context) {
+            const index = context.dataIndex;
+            if (index > 0) {
+              const currentPrice = prices[index];
+              const previousPrice = prices[index - 1];
+              return currentPrice >= previousPrice ? 'rgba(0, 230, 118, 0.8)' : 'rgba(255, 45, 85, 0.8)';
+            }
+            return 'rgba(156, 163, 175, 0.8)';
+          },
+          borderWidth: 1,
+          yAxisID: 'y1',
+          barPercentage: 0.8
+        }
+      ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false,
+      },
       plugins: {
-        legend: { display: false },
+        legend: { 
+          display: true,
+          position: 'top',
+          labels: {
+            color: 'var(--txt)',
+            font: { size: 11 },
+            usePointStyle: true,
+            padding: 15
+          }
+        },
         tooltip: {
-          backgroundColor: 'rgba(0,0,0,0.8)',
-          titleColor: 'var(--gold)',
-          bodyColor: 'var(--txt)',
-          borderColor: 'var(--gold)',
+          backgroundColor: 'rgba(0,0,0,0.9)',
+          titleColor: '#f0a500',
+          bodyColor: '#fff',
+          borderColor: '#f0a500',
           borderWidth: 1,
+          displayColors: true,
           callbacks: {
             title: function(context) {
               const dataIndex = context[0].dataIndex;
@@ -2998,6 +3086,7 @@ function renderPriceChart() {
               if (dataPoint) {
                 const date = new Date(dataPoint.time);
                 return date.toLocaleString('en-US', {
+                  weekday: 'short',
                   month: 'short',
                   day: 'numeric',
                   hour: '2-digit',
@@ -3009,21 +3098,42 @@ function renderPriceChart() {
             label: function(context) {
               const dataIndex = context.dataIndex;
               const dataPoint = priceChartData[dataIndex];
-              if (dataPoint) {
-                return [
-                  'Price: $' + dataPoint.close.toFixed(2),
-                  'High: $' + dataPoint.high.toFixed(2),
-                  'Low: $' + dataPoint.low.toFixed(2),
-                  'Volume: ' + (dataPoint.volume ? dataPoint.volume.toLocaleString() : 'N/A')
-                ];
+              
+              if (context.dataset.label === 'Price') {
+                if (dataPoint) {
+                  const change = dataIndex > 0 ? 
+                    ((dataPoint.close - priceChartData[dataIndex - 1].close) / priceChartData[dataIndex - 1].close * 100) : 0;
+                  const changeStr = change >= 0 ? '+${change.toFixed(2)}%' : '${change.toFixed(2)}%';
+                  const changeColor = change >= 0 ? '#00e676' : '#ff2d55';
+                  
+                  return [
+                    'Close: $' + dataPoint.close.toFixed(2),
+                    'Open: $' + dataPoint.open.toFixed(2),
+                    'High: $' + dataPoint.high.toFixed(2),
+                    'Low: $' + dataPoint.low.toFixed(2),
+                    'Change: ' + changeStr
+                  ];
+                }
+                return 'Price: $' + context.parsed.y.toFixed(2);
+              } else if (context.dataset.label === 'MA20') {
+                return 'MA20: $' + context.parsed.y.toFixed(2);
+              } else if (context.dataset.label === 'MA50') {
+                return 'MA50: $' + context.parsed.y.toFixed(2);
+              } else if (context.dataset.label === 'Volume') {
+                if (dataPoint && dataPoint.volume) {
+                  return 'Volume: ' + dataPoint.volume.toLocaleString();
+                }
+                return 'Volume: ' + context.parsed.y.toLocaleString();
               }
-              return 'Price: $' + context.parsed.y.toFixed(2);
             }
           }
         }
       },
       scales: {
         y: {
+          type: 'linear',
+          display: true,
+          position: 'left',
           beginAtZero: false,
           min: minPrice * 0.99,
           max: maxPrice * 1.01,
@@ -3034,7 +3144,44 @@ function renderPriceChart() {
               return '$' + value.toFixed(0);
             }
           },
-          grid: { color: 'rgba(255,255,255,0.05)' }
+          grid: { 
+            color: 'rgba(255,255,255,0.05)',
+            drawBorder: false
+          },
+          title: {
+            display: true,
+            text: 'Price (USD)',
+            color: 'var(--muted)',
+            font: { size: 11 }
+          }
+        },
+        y1: {
+          type: 'linear',
+          display: true,
+          position: 'right',
+          beginAtZero: true,
+          ticks: { 
+            color: 'var(--muted)', 
+            font: { size: 9 },
+            callback: function(value) {
+              if (value >= 1000000) {
+                return (value / 1000000).toFixed(1) + 'M';
+              } else if (value >= 1000) {
+                return (value / 1000).toFixed(1) + 'K';
+              }
+              return value.toFixed(0);
+            }
+          },
+          grid: { 
+            display: false,
+            drawBorder: false
+          },
+          title: {
+            display: true,
+            text: 'Volume',
+            color: 'var(--muted)',
+            font: { size: 11 }
+          }
         },
         x: {
           ticks: {
@@ -3055,7 +3202,10 @@ function renderPriceChart() {
               }
             }
           },
-          grid: { color: 'rgba(255,255,255,0.05)' }
+          grid: { 
+            color: 'rgba(255,255,255,0.05)',
+            drawBorder: false
+          }
         }
       }
     }
