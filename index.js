@@ -771,15 +771,11 @@ setInterval(()=>{
 ══════════════════════════════════════════════ */
 function buildSparkList(){
   const container=document.getElementById('sparkList');
-  if (!container) {
-    console.warn('sparkList container not found');
-    return;
-  }
   container.innerHTML=SPARK_COINS.map(sym=>`
     <div class="spark-item">
       <span class="spark-sym">${sym}</span>
       <canvas class="spark-canvas" id="spk-${sym}" width="60" height="22"></canvas>
-      <span class="spark-price" id="spkp-${sym}">$${COINS[sym] && COINS[sym].p ? COINS[sym].p.toFixed(COINS[sym].d || 2) : '0.00'}</span>
+      <span class="spark-price" id="spkp-${sym}">$${COINS[sym].p.toFixed(COINS[sym].d)}</span>
     </div>`).join('');
 }
 function renderSparks(){
