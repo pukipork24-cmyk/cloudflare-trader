@@ -4,11 +4,6 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // ── /favicon.ico ────────────────────────────────────────────────
-    if (url.pathname === '/favicon.ico') {
-      return new Response('', { status: 204 });
-    }
-
     // ── /api/prediction ────────────────────────────────────────────────
     if (url.pathname === '/api/prediction') {
       const r   = Math.random();
