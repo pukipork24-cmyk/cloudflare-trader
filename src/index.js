@@ -3562,20 +3562,33 @@ function renderSparks(){
 function fetchBitgetPrice(){
   var symbol = currentTradingSymbol || 'BTCUSDT';
   fetch('/api/bitget/price?symbol=' + symbol)
-    .then(function(r){ return r.json(); })
+    .then(function(r){ 
+      if (!r.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return r.json(); 
+    })
     .then(function(data){
-      if(data.success){
+      if(data && data.success){
         var changeData = {
           price: data.price,
           change24h: data.change24h
         };
         updatePriceDisplay(changeData);
-        console.log('✅ Bitget price fetched:', changeData);
+        console.log('Bitget price fetched:', changeData);
       } else {
-        console.warn('Bitget price error:', data.error);
+        console.warn('Bitget price error:', data ? data.error : 'Invalid response format');
       }
     })
-    .catch(function(e){ console.warn('Bitget price fetch failed:', e.message); });
+    .catch(function(e){ 
+      console.warn('Bitget price fetch failed:', e.message);
+      // Use fallback data
+      var fallbackData = {
+        price: COINS['BTC'] ? COINS['BTC'].p : 0,
+        change24h: 0
+      };
+      updatePriceDisplay(fallbackData);
+    });
 }
 
 function updatePriceDisplay(data){
