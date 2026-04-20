@@ -2990,7 +2990,36 @@ function renderPriceChart() {
           titleColor: 'var(--gold)',
           bodyColor: 'var(--txt)',
           borderColor: 'var(--gold)',
-          borderWidth: 1
+          borderWidth: 1,
+          callbacks: {
+            title: function(context) {
+              const dataIndex = context[0].dataIndex;
+              const dataPoint = priceChartData[dataIndex];
+              if (dataPoint) {
+                const date = new Date(dataPoint.time);
+                return date.toLocaleString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+              }
+              return context[0].label;
+            },
+            label: function(context) {
+              const dataIndex = context.dataIndex;
+              const dataPoint = priceChartData[dataIndex];
+              if (dataPoint) {
+                return [
+                  'Price: $' + dataPoint.close.toFixed(2),
+                  'High: $' + dataPoint.high.toFixed(2),
+                  'Low: $' + dataPoint.low.toFixed(2),
+                  'Volume: ' + (dataPoint.volume ? dataPoint.volume.toLocaleString() : 'N/A')
+                ];
+              }
+              return 'Price: $' + context.parsed.y.toFixed(2);
+            }
+          }
         }
       },
       scales: {
@@ -2998,14 +3027,33 @@ function renderPriceChart() {
           beginAtZero: false,
           min: minPrice * 0.99,
           max: maxPrice * 1.01,
-          ticks: { color: 'var(--muted)', font: { size: 10 } },
+          ticks: { 
+            color: 'var(--muted)', 
+            font: { size: 10 },
+            callback: function(value) {
+              return '$' + value.toFixed(0);
+            }
+          },
           grid: { color: 'rgba(255,255,255,0.05)' }
         },
         x: {
           ticks: {
             color: 'var(--muted)',
             font: { size: 9 },
-            maxTicksLimit: priceChartRange === 'year' ? 12 : priceChartRange === 'month' ? 10 : 8
+            maxTicksLimit: priceChartRange === 'year' ? 12 : priceChartRange === 'month' ? 10 : 8,
+            callback: function(value, index, values) {
+              const label = this.getLabelForValue(value);
+              if (priceChartRange === '24h') {
+                // Show time for 24h view
+                return label;
+              } else if (priceChartRange === 'week' || priceChartRange === 'month') {
+                // Show date for week/month view
+                return label;
+              } else {
+                // Show date for year view
+                return label;
+              }
+            }
           },
           grid: { color: 'rgba(255,255,255,0.05)' }
         }

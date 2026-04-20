@@ -1095,10 +1095,17 @@ function drawChart(){
   const step=Math.max(1,Math.floor(S.candles.length/6));
   for(let i=0;i<S.candles.length;i+=step){
     const t=new Date(S.candles[i].t);
-    ctx.fillText(
-      t.getHours().toString().padStart(2,'0')+':'+t.getMinutes().toString().padStart(2,'0'),
-      toX(i),H-pad.b+14
-    );
+    const timeStr = t.getHours().toString().padStart(2,'0')+':'+t.getMinutes().toString().padStart(2,'0');
+    const dateStr = (t.getMonth()+1)+'/'+t.getDate();
+    
+    // Display date and time for better context
+    ctx.fillText(dateStr+' '+timeStr, toX(i), H-pad.b+14);
+    
+    // Add price label above each time marker
+    const price = S.candles[i].c;
+    ctx.fillStyle='#f0a500';ctx.font='8px system-ui';
+    ctx.fillText('$'+price.toFixed(0), toX(i), H-pad.b+26);
+    ctx.fillStyle='#4a4a80';ctx.font='9px system-ui';
   }
 }
 
